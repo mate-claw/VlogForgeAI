@@ -152,14 +152,6 @@ docs/         架构、组件库、QA 和版本说明
 2. 提交 Pull Request 改进代码和文档
 3. 分享生成效果、失败案例和新的视觉风格需求
 
-## 参考项目
-
-- [Remotion](https://github.com/remotion-dev/remotion)
-- [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo)
-- [NarratoAI](https://github.com/linyqh/NarratoAI)
-
-感谢这些项目给 AI 视频生成、自动剪辑和开源工具链带来的启发。
-
 ## 重要许可证说明
 
 本项目使用 [Remotion](https://github.com/remotion-dev/remotion) 作为第三方渲染依赖。Remotion 拥有独立许可证，请在商业使用前阅读并遵守 [Remotion License](https://www.remotion.dev/docs/license)。

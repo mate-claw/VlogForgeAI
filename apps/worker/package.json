@@ -1,0 +1,31 @@
+{
+  "name": "worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/worker.ts",
+    "start": "tsx src/worker.ts",
+    "once": "tsx src/worker.ts --once",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-vlog/core": "*",
+    "@ai-vlog/shared": "*",
+    "@remotion/bundler": "^4.0.267",
+    "@remotion/renderer": "^4.0.267",
+    "dotenv": "^16.4.7",
+    "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0",
+    "mime-types": "^2.1.35",
+    "nanoid": "^5.0.9",
+    "@aws-sdk/client-s3": "^3.723.0",
+    "@prisma/client": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/mime-types": "^2.1.4",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

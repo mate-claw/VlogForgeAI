@@ -1,0 +1,1 @@
+import React from 'react'; export const PictureInPictureLayout:React.FC<{children:React.ReactNode;background?:React.ReactNode}>=({children,background})=><>{background}<div style={{position:'absolute',right:64,bottom:320,width:420,height:620,borderRadius:34,overflow:'hidden',boxShadow:'0 26px 80px rgba(0,0,0,.45)',border:'8px solid rgba(255,255,255,.42)'}}>{children}</div></>;

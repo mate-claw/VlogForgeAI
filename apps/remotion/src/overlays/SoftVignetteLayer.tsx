@@ -1,0 +1,1 @@
+import React from 'react'; export const SoftVignetteLayer=()=> <div style={{position:'absolute',inset:0,background:'radial-gradient(circle at center, transparent 48%, rgba(0,0,0,.34) 82%, rgba(0,0,0,.62))',pointerEvents:'none'}}/>;

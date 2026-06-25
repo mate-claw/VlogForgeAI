@@ -1,0 +1,23 @@
+{
+  "name": "remotion-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.tsx --port 9000",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-vlog/shared": "*",
+    "@remotion/player": "^4.0.267",
+    "@remotion/renderer": "^4.0.267",
+    "remotion": "^4.0.267",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,3 @@
+import React from 'react';
+import type { VisualStyle } from '@ai-vlog/shared';
+export const GradientMoodLayer: React.FC<{visualStyle: VisualStyle}> = ({visualStyle}) => { const gradient = visualStyle==='cute' ? 'linear-gradient(180deg, rgba(255,105,180,.18), transparent 45%, rgba(158,218,255,.14))' : visualStyle==='cinematic' ? 'linear-gradient(180deg, rgba(0,0,0,.22), transparent 42%, rgba(0,0,0,.44))' : visualStyle==='beat' ? 'linear-gradient(140deg, rgba(255,0,96,.16), transparent 45%, rgba(0,170,255,.14))' : 'linear-gradient(180deg, rgba(255,218,180,.14), transparent 50%, rgba(0,0,0,.24))'; return <div style={{position:'absolute',inset:0,background:gradient,pointerEvents:'none'}}/>; };

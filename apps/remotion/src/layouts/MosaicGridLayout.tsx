@@ -1,0 +1,1 @@
+import React from 'react'; import { LayoutFrame, blurredBg } from './BaseLayouts'; export const MosaicGridLayout:React.FC<{children:React.ReactNode;background?:React.ReactNode}>=({children,background})=><>{blurredBg(background)}<LayoutFrame style={{left:48,right:48,top:160,bottom:260,borderRadius:28,boxShadow:'0 20px 70px rgba(0,0,0,.33)'}}>{children}</LayoutFrame></>;

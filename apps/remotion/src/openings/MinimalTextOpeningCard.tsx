@@ -1,0 +1,1 @@
+import React from 'react'; import type {VlogPlan} from '@ai-vlog/shared'; import {OpeningBase} from './base'; export const MinimalTextOpeningCard:React.FC<{plan:VlogPlan}>=({plan})=><OpeningBase plan={plan}/>;

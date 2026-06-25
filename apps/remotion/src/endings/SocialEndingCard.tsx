@@ -1,0 +1,1 @@
+import React from 'react'; import type {VlogPlan} from '@ai-vlog/shared'; import {EndingBase} from './base'; export const SocialEndingCard:React.FC<{plan:VlogPlan}>=({plan})=><EndingBase plan={plan} label="POSTED FROM TODAY"/>;

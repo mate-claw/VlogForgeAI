@@ -1,0 +1,1 @@
+import React from 'react'; import type {VlogPlan} from '@ai-vlog/shared'; import {OpeningBase} from './base'; export const BlurVideoOpeningCard:React.FC<{plan:VlogPlan}>=({plan})=><OpeningBase plan={plan} prefix="TODAY"/>;

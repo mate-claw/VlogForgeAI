@@ -1,0 +1,1 @@
+import React from 'react'; import type {VlogPlan} from '@ai-vlog/shared'; import {EndingBase} from './base'; export const RecEndingCard:React.FC<{plan:VlogPlan}>=({plan})=><EndingBase plan={plan} label="REC DONE"/>;

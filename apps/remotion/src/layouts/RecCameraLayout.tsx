@@ -1,0 +1,1 @@
+import React from 'react'; export const RecCameraLayout:React.FC<{children:React.ReactNode}> = ({children}) => <div style={{position:'absolute',inset:44,borderRadius:34,overflow:'hidden',border:'2px solid rgba(255,255,255,.28)',boxShadow:'inset 0 0 0 1px rgba(255,255,255,.15)'}}>{children}</div>;

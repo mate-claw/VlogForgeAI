@@ -1,0 +1,1 @@
+import React from 'react'; import type {DirectorRevisionSuggestion} from '@ai-vlog/shared'; export const RevisionReasonText:React.FC<{suggestion:DirectorRevisionSuggestion}>=({suggestion})=><div>{suggestion.reason}</div>;

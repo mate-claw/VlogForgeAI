@@ -1,0 +1,1 @@
+import React from 'react'; export const BrightSummerLayer=()=> <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(255,246,181,.16),rgba(105,213,255,.08))',mixBlendMode:'screen'}}/>;

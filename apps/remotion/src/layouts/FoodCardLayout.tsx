@@ -1,0 +1,1 @@
+import React from 'react'; import { LayoutFrame, blurredBg } from './BaseLayouts'; export const FoodCardLayout:React.FC<{children:React.ReactNode;background?:React.ReactNode}>=({children,background})=><>{blurredBg(background)}<LayoutFrame style={{left:58,right:58,top:210,bottom:315,borderRadius:54,boxShadow:'0 26px 90px rgba(0,0,0,.38)'}}>{children}</LayoutFrame></>;

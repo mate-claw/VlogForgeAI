@@ -1,0 +1,1 @@
+import React from 'react'; import { LayoutFrame, blurredBg } from './BaseLayouts'; export const SplitScreenLayout:React.FC<{children:React.ReactNode;background?:React.ReactNode}>=({children,background})=><>{blurredBg(background)}<LayoutFrame style={{left:46,right:46,top:170,bottom:270,borderRadius:24,border:'4px solid rgba(255,255,255,.24)'}}>{children}</LayoutFrame></>;

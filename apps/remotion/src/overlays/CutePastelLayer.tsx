@@ -1,0 +1,1 @@
+import React from 'react'; export const CutePastelLayer=()=> <div style={{position:'absolute',inset:0,background:'linear-gradient(135deg,rgba(255,174,210,.15),rgba(157,218,255,.13))',mixBlendMode:'screen'}}/>;

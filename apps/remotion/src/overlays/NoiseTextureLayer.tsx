@@ -1,0 +1,1 @@
+import React from 'react'; export const NoiseTextureLayer=()=> <div style={{position:'absolute',inset:0,opacity:.08,backgroundImage:'linear-gradient(45deg,#fff 25%,transparent 25%),linear-gradient(-45deg,#fff 25%,transparent 25%)',backgroundSize:'12px 12px',mixBlendMode:'overlay'}}/>;

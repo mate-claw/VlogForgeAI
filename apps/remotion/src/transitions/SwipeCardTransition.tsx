@@ -1,0 +1,3 @@
+import React from 'react';
+import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion';
+export const SwipeCardTransition: React.FC<{ durationFrames: number; accent?: string }> = ({ durationFrames, accent='#fff' }) => { const f=useCurrentFrame(); const x=interpolate(f,[0,durationFrames],[-1180,1180],{extrapolateRight:'clamp'}); const rot=interpolate(f,[0,durationFrames],[-5,5],{extrapolateRight:'clamp'}); return <AbsoluteFill style={{pointerEvents:'none'}}><div style={{position:'absolute',left:x,top:210,width:980,height:1400,borderRadius:48,background:`linear-gradient(135deg, rgba(255,255,255,.38), ${accent}44)`,boxShadow:'0 40px 140px rgba(0,0,0,.4)',transform:`rotate(${rot}deg)`,backdropFilter:'blur(8px)'}}/></AbsoluteFill>; };

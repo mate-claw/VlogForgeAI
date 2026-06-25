@@ -1,0 +1,3 @@
+import React from 'react';
+import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion';
+export const ZoomTransition: React.FC<{ durationFrames: number; accent?: string }> = ({ durationFrames, accent='#fff' }) => { const f=useCurrentFrame(); const scale=interpolate(f,[0,durationFrames],[1.18,1],{extrapolateRight:'clamp'}); const opacity=interpolate(f,[0,durationFrames],[.42,0],{extrapolateRight:'clamp'}); return <AbsoluteFill style={{opacity,transform:`scale(${scale})`,background:`radial-gradient(circle, transparent 30%, ${accent}66 56%, rgba(0,0,0,.45))`,mixBlendMode:'screen',pointerEvents:'none'}}/>; };

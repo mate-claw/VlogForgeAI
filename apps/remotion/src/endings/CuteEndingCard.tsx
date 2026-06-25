@@ -1,0 +1,1 @@
+import React from 'react'; import type {VlogPlan} from '@ai-vlog/shared'; import {EndingBase} from './base'; export const CuteEndingCard:React.FC<{plan:VlogPlan}>=({plan})=><EndingBase plan={plan} label="♡"> <div style={{fontSize:52,marginTop:28}}>✨ ♡ ✦</div></EndingBase>;

@@ -1,0 +1,1 @@
+import React from 'react'; import {interpolate,useCurrentFrame} from 'remotion'; export const FlashOverlayLayer=()=>{const f=useCurrentFrame();const opacity=interpolate(f%30,[0,2,8],[.35,.12,0],{extrapolateRight:'clamp'});return <div style={{position:'absolute',inset:0,background:'#fff',opacity}}/>};

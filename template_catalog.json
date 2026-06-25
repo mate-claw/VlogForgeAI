@@ -1,0 +1,170 @@
+[
+  {
+    "templateId": "template_warm",
+    "name": "温暖回忆模板",
+    "sceneIds": ["warm_memory"],
+    "layout": "warm_vertical_montage",
+    "defaultTransitions": ["crossfade", "soft_zoom", "fade_black"],
+    "defaultStickers": ["sticker_home_label", "sticker_heart"],
+    "defaultBgm": "bgm_warm_memory_soft_72bpm_01",
+    "style": {
+      "color": "warm_realistic",
+      "pace": "medium_slow",
+      "captionStyle": "warm_sentence"
+    }
+  },
+  {
+    "templateId": "template_rec_life",
+    "name": "REC生活记录模板",
+    "sceneIds": ["rec_life"],
+    "layout": "rec_camera_vertical",
+    "defaultTransitions": ["slide_left", "crossfade", "fade_black"],
+    "defaultStickers": ["sticker_rec_ui", "sticker_progress_bar"],
+    "defaultBgm": "bgm_rec_life_lofi_88bpm_01",
+    "style": {
+      "color": "natural_warm",
+      "pace": "medium",
+      "captionStyle": "simple_record"
+    }
+  },
+  {
+    "templateId": "template_food_daily",
+    "name": "用餐日常模板",
+    "sceneIds": ["food_daily"],
+    "layout": "warm_vertical_food",
+    "defaultTransitions": ["crossfade", "soft_zoom", "fade_white"],
+    "defaultStickers": ["sticker_good_day", "sticker_food_label"],
+    "defaultBgm": "bgm_warm_memory_soft_72bpm_01",
+    "style": {
+      "color": "warm_home",
+      "pace": "medium_slow",
+      "captionStyle": "soft_daily"
+    }
+  },
+  {
+    "templateId": "template_kid_family",
+    "name": "萌娃亲子模板",
+    "sceneIds": ["kid_family"],
+    "layout": "cute_family_vertical",
+    "defaultTransitions": ["crossfade", "white_flash", "soft_zoom"],
+    "defaultStickers": ["sticker_sun_cloud", "sticker_heart", "sticker_star"],
+    "defaultBgm": "bgm_kid_family_cute_95bpm_01",
+    "style": {
+      "color": "bright_cute",
+      "pace": "medium",
+      "captionStyle": "cute_short"
+    }
+  },
+  {
+    "templateId": "template_food_mood",
+    "name": "餐厅氛围模板",
+    "sceneIds": ["food_mood"],
+    "layout": "cinematic_food_card",
+    "defaultTransitions": ["soft_zoom", "blur_crossfade", "crossfade"],
+    "defaultStickers": ["sticker_cafe_label", "sticker_food_label"],
+    "defaultBgm": "bgm_food_mood_jazz_82bpm_01",
+    "style": {
+      "color": "warm_elegant",
+      "pace": "slow_medium",
+      "captionStyle": "elegant_short"
+    }
+  },
+  {
+    "templateId": "template_dynamic_beat",
+    "name": "动感卡点模板",
+    "sceneIds": ["dynamic_beat"],
+    "layout": "vertical_fast_cut",
+    "defaultTransitions": ["white_flash", "slide_left", "zoom_in", "hard_cut"],
+    "defaultStickers": ["sticker_city_label", "sticker_progress_bar"],
+    "defaultBgm": "bgm_dynamic_vlog_122bpm_01",
+    "style": {
+      "color": "high_contrast",
+      "pace": "fast",
+      "captionStyle": "short_punchy"
+    }
+  },
+  {
+    "templateId": "template_cinematic_travel",
+    "name": "电影旅行模板",
+    "sceneIds": ["cinematic_travel"],
+    "layout": "cinematic_letterbox",
+    "defaultTransitions": ["fade_black", "blur_crossfade", "soft_zoom"],
+    "defaultStickers": ["sticker_travel_label", "sticker_city_label"],
+    "defaultBgm": "bgm_cinematic_travel_76bpm_01",
+    "style": {
+      "color": "cinematic",
+      "pace": "slow_medium",
+      "captionStyle": "cinematic_title"
+    }
+  },
+  {
+    "templateId": "template_summer_outdoor",
+    "name": "夏日户外模板",
+    "sceneIds": ["summer_outdoor"],
+    "layout": "bright_vertical",
+    "defaultTransitions": ["fade_white", "slide_left", "white_flash"],
+    "defaultStickers": ["sticker_sun_cloud", "sticker_good_day", "sticker_star"],
+    "defaultBgm": "bgm_summer_outdoor_100bpm_01",
+    "style": {
+      "color": "bright_summer",
+      "pace": "medium",
+      "captionStyle": "fresh_daily"
+    }
+  },
+  {
+    "templateId": "template_weekend_home",
+    "name": "周末慢生活模板",
+    "sceneIds": ["weekend_home"],
+    "layout": "soft_home_montage",
+    "defaultTransitions": ["crossfade", "soft_zoom", "fade_black"],
+    "defaultStickers": ["sticker_weekend", "sticker_home_label", "sticker_good_day"],
+    "defaultBgm": "bgm_weekend_home_70bpm_01",
+    "style": {
+      "color": "soft_warm",
+      "pace": "slow",
+      "captionStyle": "slow_life"
+    }
+  },
+  {
+    "templateId": "template_city_daily",
+    "name": "城市日常模板",
+    "sceneIds": ["city_daily"],
+    "layout": "clean_modern_vertical",
+    "defaultTransitions": ["slide_left", "slide_right", "hard_cut", "zoom_in"],
+    "defaultStickers": ["sticker_city_label", "sticker_progress_bar"],
+    "defaultBgm": "bgm_city_daily_105bpm_01",
+    "style": {
+      "color": "clean_modern",
+      "pace": "medium",
+      "captionStyle": "modern_short"
+    }
+  },
+  {
+    "templateId": "template_pet_cute",
+    "name": "宠物可爱模板",
+    "sceneIds": ["pet_cute"],
+    "layout": "cute_vertical",
+    "defaultTransitions": ["white_flash", "crossfade", "slide_left"],
+    "defaultStickers": ["sticker_paw", "sticker_heart", "sticker_star", "sticker_cute_label"],
+    "defaultBgm": "bgm_pet_cute_96bpm_01",
+    "style": {
+      "color": "bright_cute",
+      "pace": "medium",
+      "captionStyle": "cute_funny"
+    }
+  },
+  {
+    "templateId": "template_night_reflective",
+    "name": "夜晚回顾模板",
+    "sceneIds": ["night_reflective"],
+    "layout": "dark_soft_montage",
+    "defaultTransitions": ["fade_black", "blur_crossfade", "crossfade"],
+    "defaultStickers": ["sticker_night_label"],
+    "defaultBgm": "bgm_night_reflective_68bpm_01",
+    "style": {
+      "color": "dark_warm",
+      "pace": "slow",
+      "captionStyle": "reflective"
+    }
+  }
+]

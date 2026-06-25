@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId       String   @id
+  email        String   @unique
+  displayName  String
+  passwordHash String?
+  role         String   @default("user")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  jobs         VlogJob[]
+}
+
+model VlogJob {
+  jobId             String   @id
+  userId            String?
+  user              User?    @relation(fields: [userId], references: [userId])
+  status            String
+  stage             String
+  progress          Int
+  shareVisibility   String   @default("unlisted")
+  shareSlug         String?  @unique
+  payload           Json
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  events            JobEvent[]
+  feedback          VlogFeedback[]
+}
+
+model JobEvent {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       VlogJob  @relation(fields: [jobId], references: [jobId], onDelete: Cascade)
+  status    String
+  stage     String
+  progress  Int
+  detail    String?
+  createdAt DateTime @default(now())
+}
+
+model AssetAnalysisCache {
+  assetHash String   @id
+  analysis  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model VlogQualityEvaluation {
+  id          String   @id @default(cuid())
+  jobId       String
+  versionId   String
+  overallScore Int
+  detail      Json
+  createdAt   DateTime @default(now())
+
+  @@index([jobId])
+  @@index([versionId])
+}
+
+model VlogFeedback {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       VlogJob  @relation(fields: [jobId], references: [jobId], onDelete: Cascade)
+  userId    String?
+  versionId String
+  action    String
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+  @@index([versionId])
+  @@index([userId])
+}

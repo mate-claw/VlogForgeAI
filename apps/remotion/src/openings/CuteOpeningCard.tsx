@@ -1,0 +1,1 @@
+import React from 'react'; import type {VlogPlan} from '@ai-vlog/shared'; import {OpeningBase} from './base'; export const CuteOpeningCard:React.FC<{plan:VlogPlan}>=({plan})=><OpeningBase plan={plan} prefix="♡ CUTE DAY"> <div style={{fontSize:58,marginTop:32}}>✨ 🐾 ♡</div></OpeningBase>;

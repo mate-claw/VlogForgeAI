@@ -1,0 +1,1 @@
+import React from 'react'; export const CinematicLetterboxLayer=()=> <><div style={{position:'absolute',left:0,right:0,top:0,height:145,background:'#020202',pointerEvents:'none'}}/><div style={{position:'absolute',left:0,right:0,bottom:0,height:145,background:'#020202',pointerEvents:'none'}}/></>;

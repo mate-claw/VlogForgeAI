@@ -30,24 +30,30 @@ export async function runProcess(command: string, args: string[], cwd?: string, 
     const child = spawn(command, args, { cwd, shell: false, windowsHide: true });
     let stdout = '';
     let stderr = '';
+    let settled = false;
     const timer = timeoutMs && timeoutMs > 0 ? setTimeout(() => {
-      child.kill('SIGKILL');
-      reject(new Error(`Command timed out: ${command} after ${timeoutMs}ms`));
+      if (settled) return;
+      settled = true;
+      try { child.kill('SIGKILL'); } catch { try { child.kill(); } catch {} }
+      reject(new Error(`命令超时：${command} ${args.join(' ')}
+timeoutMs=${timeoutMs}
+${stderr}`));
     }, timeoutMs) : undefined;
-    const clearTimer = () => {
+    const finish = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
       if (timer) clearTimeout(timer);
+      fn();
     };
     child.stdout?.on('data', (chunk) => (stdout += chunk.toString()));
     child.stderr?.on('data', (chunk) => (stderr += chunk.toString()));
-    child.on('error', (error) => {
-      clearTimer();
-      reject(error);
-    });
-    child.on('close', (code) => {
-      clearTimer();
+    child.on('error', (error) => finish(() => reject(error)));
+    child.on('close', (code) => finish(() => {
       if (code === 0) resolve({ stdout, stderr });
-      else reject(new Error(`命令失败：${command} ${args.join(' ')}\nexit=${code}\n${stderr}`));
-    });
+      else reject(new Error(`命令失败：${command} ${args.join(' ')}
+exit=${code}
+${stderr}`));
+    }));
   });
 }
 
@@ -173,20 +179,19 @@ export async function probeVideoMetadata(filePath: string): Promise<VideoMetadat
 
 export async function normalizeVideoForRender(params: { inputPath: string; outputPath: string; targetFps: number; interpolation?: string }): Promise<void> {
   if (!ffmpegPath) throw new Error('ffmpeg-static 不可用，无法生成稳定帧率代理视频');
+  const ffmpegBin = ffmpegPath;
   fs.mkdirSync(path.dirname(params.outputPath), { recursive: true });
   const fps = Math.max(1, Math.round(params.targetFps));
   const interpolation = (params.interpolation || process.env.VIDEO_PROXY_INTERPOLATION || 'fps').toLowerCase();
   const preset = process.env.VIDEO_PROXY_PRESET || 'veryfast';
   const crf = process.env.VIDEO_PROXY_CRF || '20';
   const timeoutMs = Number(process.env.VIDEO_PROXY_TIMEOUT_MS || 120000);
-  const ffmpegExecutable = String(ffmpegPath);
 
   const vfMci = `minterpolate=fps=${fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,setpts=N/(${fps}*TB),format=yuv420p`;
   const vfBlend = `minterpolate=fps=${fps}:mi_mode=blend,setpts=N/(${fps}*TB),format=yuv420p`;
   const vfFpsOnly = `fps=${fps},setpts=N/(${fps}*TB),format=yuv420p`;
 
-  const run = async (vf: string): Promise<void> => {
-    await runProcess(ffmpegExecutable, [
+  const run = async (vf: string) => { await runProcess(ffmpegBin, [
     '-y',
     '-i', params.inputPath,
     '-vf', vf,
@@ -201,22 +206,21 @@ export async function normalizeVideoForRender(params: { inputPath: string; outpu
     '-ar', '48000',
     '-af', 'aresample=async=1:first_pts=0',
     '-movflags', '+faststart',
-      params.outputPath,
-    ], undefined, timeoutMs);
-  };
+    params.outputPath,
+  ], undefined, timeoutMs); };
 
   try {
-    if (interpolation === 'none' || interpolation === 'fps') return await run(vfFpsOnly);
-    if (interpolation === 'blend') return await run(vfBlend);
-    return await run(vfMci);
+    if (interpolation === 'none' || interpolation === 'fps') { await run(vfFpsOnly); return; }
+    if (interpolation === 'blend') { await run(vfBlend); return; }
+    await run(vfMci); return;
   } catch (error) {
     // mci 插帧在 Windows/普通电脑上可能非常慢，超时或失败时优先降级，保证先出预览。
     if (interpolation === 'mci') {
-      try { return await run(vfBlend); } catch {}
-      try { return await run(vfFpsOnly); } catch {}
+      try { await run(vfBlend); return; } catch {}
+      try { await run(vfFpsOnly); return; } catch {}
     }
     if (interpolation === 'blend') {
-      try { return await run(vfFpsOnly); } catch {}
+      try { await run(vfFpsOnly); return; } catch {}
     }
     throw error;
   }

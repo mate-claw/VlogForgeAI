@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type {
+  AiRuntimeOptions,
   AssetAnalysis,
   CommercialVlogVersion,
   DirectorRevisionSuggestion,
@@ -35,6 +36,13 @@ import { publishJobFile } from '../../api/src/services/objectStorage';
 
 const renderQueue = new RenderQueue(Math.max(1, config.renderConcurrency));
 
+function runtimeFromJobOrPayload(job: { language?: 'zh' | 'en'; aiProvider?: 'qwen' | 'gemini' } | undefined | null, payload?: AiRuntimeOptions): AiRuntimeOptions {
+  return {
+    language: payload?.language || job?.language || 'zh',
+    aiProvider: payload?.aiProvider || job?.aiProvider || (config.defaultAiProvider === 'gemini' ? 'gemini' : 'qwen'),
+  };
+}
+
 function sanitizeRevisionForJob(value: unknown) {
   const text = String(value || 'ai-revise')
     .trim()
@@ -52,6 +60,45 @@ function markVersion(jobId: string, version: CommercialVlogVersion) {
   updateJob(jobId, { versions, activeVersionId: job.activeVersionId || version.versionId }, `version ${version.versionId}`);
 }
 
+function markFirstPlayableIfNeeded(jobId: string, versionId: string) {
+  const job = readJob(jobId);
+  if (!job) return;
+  const playable = job.versions.filter((item) => item.previewUrl || item.videoUrl);
+  if (!playable.length) return;
+  const activePlayable = job.versions.find((item) => item.versionId === job.activeVersionId && (item.previewUrl || item.videoUrl));
+  const nextActive = activePlayable?.versionId || playable[0].versionId || versionId;
+  if (job.status !== 'completed' && job.status !== 'failed') {
+    updateJob(jobId, {
+      status: 'partial_ready',
+      stage: job.language === 'en' ? 'A preview is ready. Other versions may continue rendering in the background.' : '已有预览可播放，后台可继续生成其它版本',
+      progress: Math.max(job.progress || 0, 58),
+      activeVersionId: nextActive,
+    }, `first playable ${nextActive}`);
+  }
+}
+
+function markVersionFailed(jobId: string, versionId: string, label: string, error: unknown) {
+  const job = readJob(jobId);
+  if (!job) return;
+  const message = error instanceof Error ? error.message : String(error);
+  const existing = job.versions.find((item) => item.versionId === versionId);
+  const failed: CommercialVlogVersion = {
+    ...(existing || {
+      versionId,
+      label,
+      progress: 0,
+      hdStatus: 'failed',
+      qualityStatus: 'failed',
+      createdAt: new Date().toISOString(),
+    }),
+    status: 'failed',
+    hdStatus: existing?.hdStatus === 'ready' ? 'ready' : 'failed',
+    qualityStatus: existing?.qualityStatus || 'failed',
+    error: message.slice(0, 1000),
+  } as CommercialVlogVersion;
+  const versions = [...job.versions.filter((item) => item.versionId !== versionId), failed];
+  updateJob(jobId, { versions }, `version failed ${versionId}: ${message.slice(0, 200)}`);
+}
 
 function summarizeQuality(jobId: string) {
   const job = readJob(jobId);
@@ -84,6 +131,7 @@ async function evaluateAndMarkVersion(jobId: string, params: {
   analyses: AssetAnalysis[];
   plan: VlogPlan;
   label?: string;
+  runtime?: AiRuntimeOptions;
 }) {
   let job = readJob(jobId);
   if (!job) throw new Error(`找不到任务：${jobId}`);
@@ -92,7 +140,7 @@ async function evaluateAndMarkVersion(jobId: string, params: {
   version.qualityStatus = 'evaluating';
   markVersion(jobId, version);
 
-  const quality = await timedJobStep(jobId, `qwen_quality_${params.versionId}`, () => evaluateVlogPlanWithQwen({ assets: params.assets, analyses: params.analyses, plan: params.plan, versionLabel: params.label }), { versionId: params.versionId });
+  const quality = await timedJobStep(jobId, `qwen_quality_${params.versionId}`, () => evaluateVlogPlanWithQwen({ assets: params.assets, analyses: params.analyses, plan: params.plan, versionLabel: params.label, runtime: params.runtime }), { versionId: params.versionId });
   job = readJob(jobId);
   version = job?.versions.find((item) => item.versionId === params.versionId);
   if (!version) throw new Error(`找不到版本：${params.versionId}`);
@@ -112,19 +160,20 @@ async function renderEvaluateMaybeImprove(jobId: string, params: {
   assets: UploadedAsset[];
   analyses: AssetAnalysis[];
   allowAutoRegenerate?: boolean;
+  runtime?: AiRuntimeOptions;
 }): Promise<CommercialVlogVersion> {
   const initial = await renderPreviewVersion(jobId, { versionId: params.versionId, label: params.label, description: params.description, plan: params.plan });
-  const quality = await evaluateAndMarkVersion(jobId, { versionId: params.versionId, assets: params.assets, analyses: params.analyses, plan: params.plan, label: params.label });
+  const quality = await evaluateAndMarkVersion(jobId, { versionId: params.versionId, assets: params.assets, analyses: params.analyses, plan: params.plan, label: params.label, runtime: params.runtime });
   if (params.allowAutoRegenerate && config.autoRegenerateMax > 0 && (quality.shouldRegenerate || quality.overallScore < config.qualityThreshold)) {
     updateJob(jobId, { status: 'directing', stage: `AI 质量评估 ${quality.overallScore} 分，正在自动重导：${params.label}`, progress: 52 }, 'quality auto regenerate');
     const jobForPreference = readJob(jobId);
     const userPreference = getUserPreferenceProfile(jobForPreference?.userId);
-    const improvedPlan = await timedJobStep(jobId, `qwen_quality_repair_${params.versionId}`, () => improveDirectorPlanFromEvaluationWithQwen({ assets: params.assets, analyses: params.analyses, currentPlan: params.plan, evaluation: quality, preference: userPreference }), { score: quality.overallScore });
+    const improvedPlan = await timedJobStep(jobId, `qwen_quality_repair_${params.versionId}`, () => improveDirectorPlanFromEvaluationWithQwen({ assets: params.assets, analyses: params.analyses, currentPlan: params.plan, evaluation: quality, preference: userPreference, runtime: params.runtime }), { score: quality.overallScore });
     const improvedVersionId = `${params.versionId}-qfix1`;
     const improved = await renderPreviewVersion(jobId, { versionId: improvedVersionId, label: `${params.label} · AI重导`, description: quality.improvementInstruction || quality.problems.join('；'), plan: improvedPlan });
     improved.autoRegeneratedFrom = params.versionId;
     markVersion(jobId, improved);
-    await evaluateAndMarkVersion(jobId, { versionId: improvedVersionId, assets: params.assets, analyses: params.analyses, plan: improvedPlan, label: improved.label });
+    await evaluateAndMarkVersion(jobId, { versionId: improvedVersionId, assets: params.assets, analyses: params.analyses, plan: improvedPlan, label: improved.label, runtime: params.runtime });
     updateJob(jobId, { activeVersionId: improvedVersionId }, `auto regenerated active ${improvedVersionId}`);
     return improved;
   }
@@ -184,6 +233,7 @@ async function renderPreviewVersion(jobId: string, params: {
   version.progress = 55;
   version.status = 'ready';
   markVersion(jobId, version);
+  markFirstPlayableIfNeeded(jobId, params.versionId);
   return version;
 }
 
@@ -227,12 +277,14 @@ async function renderHdForVersion(jobId: string, versionId: string, aspect: '9:1
   return version;
 }
 
-export async function processCreateVlog(jobId: string, payload: { assets?: UploadedAsset[] }) {
+export async function processCreateVlog(jobId: string, payload: { assets?: UploadedAsset[]; language?: 'zh' | 'en'; aiProvider?: 'qwen' | 'gemini' }) {
   try {
     const jobDir = getJobDir(jobId);
+    const jobBefore = readJob(jobId);
+    const runtime = runtimeFromJobOrPayload(jobBefore, payload);
     const assets = payload.assets || readJsonFile<UploadedAsset[]>(path.resolve(jobDir, 'assets.json'));
     updateJob(jobId, { status: 'analyzing', stage: 'Worker 正在分析素材并复用缓存', progress: 12, assets }, 'worker analysis');
-    const { analyses, cacheHits } = await timedJobStep(jobId, 'qwen_vl_analysis_with_cache', () => analyzeAssetsWithCache(assets, jobDir), { assetCount: assets.length });
+    const { analyses, cacheHits } = await timedJobStep(jobId, 'qwen_vl_analysis_with_cache', () => analyzeAssetsWithCache(assets, jobDir, runtime), { assetCount: assets.length });
     fs.writeFileSync(path.resolve(jobDir, 'assets.json'), JSON.stringify(assets, null, 2), 'utf-8');
     fs.writeFileSync(path.resolve(jobDir, 'analysis.json'), JSON.stringify(analyses, null, 2), 'utf-8');
     updateJob(jobId, { analysis: analyses, analysisCacheHits: cacheHits, status: 'directing', stage: `AI 正在生成第一版故事和剪辑方案（缓存命中 ${cacheHits}/${assets.length}）`, progress: 30 }, 'analysis ready');
@@ -242,23 +294,36 @@ export async function processCreateVlog(jobId: string, payload: { assets?: Uploa
     if (userPreference) {
       updateJob(jobId, { userPreferenceSnapshot: userPreference, personalizationHint: userPreference.promptHint }, 'personalization applied');
     }
-    const basePlan = await timedJobStep(jobId, 'qwen_director_plan', () => createDirectorPlanWithQwen(assets, analyses, userPreference), { assetCount: assets.length });
+    const basePlan = await timedJobStep(jobId, 'qwen_director_plan', () => createDirectorPlanWithQwen(assets, analyses, userPreference, runtime), { assetCount: assets.length });
     updateJob(jobId, { status: 'rendering_preview', stage: `正在生成 ${config.previewDurationSeconds} 秒极速预览`, progress: 44 }, 'preview v1');
-    const firstVersion = await renderEvaluateMaybeImprove(jobId, { versionId: 'v1', label: 'AI 首选版', description: basePlan.directorComment, plan: basePlan, assets, analyses, allowAutoRegenerate: true });
+    const firstVersion = await renderEvaluateMaybeImprove(jobId, { versionId: 'v1', label: 'AI 首选版', description: basePlan.directorComment, plan: basePlan, assets, analyses, allowAutoRegenerate: true, runtime });
     updateJob(jobId, { status: 'partial_ready', stage: '极速预览已可播放，AI 已完成质量评估，后台正在生成高清版和更多版本', progress: 58, activeVersionId: firstVersion.versionId }, 'preview quality ready');
 
     updateJob(jobId, { status: 'rendering_hd', stage: `正在生成推荐版本高清 MP4：${firstVersion.label}`, progress: 64 }, 'hd recommended');
     await renderHdForVersion(jobId, firstVersion.versionId, '9:16');
     updateJob(jobId, { status: 'rendering_versions', stage: 'AI 正在继续生成 2 个差异化版本', progress: 72 }, 'variants');
 
-    const suggestions = (basePlan.revisionSuggestions || []).slice(0, 2);
+    const variantCount = Math.max(1, Math.min(config.maxVersions, (basePlan.revisionSuggestions || []).length + 1));
+    const suggestions = variantCount <= 1 ? [] : (basePlan.revisionSuggestions || []).slice(0, variantCount - 1);
     for (let i = 0; i < suggestions.length; i += 1) {
       const suggestion = suggestions[i];
-      updateJob(jobId, { status: 'rendering_versions', stage: `正在生成第 ${i + 2} 个版本：${suggestion.label}`, progress: 74 + i * 10 }, 'variant directing');
-      const plan = await timedJobStep(jobId, 'qwen_variant_plan', () => createCommercialVariantPlanWithQwen({ assets, analyses, basePlan, suggestion, preference: userPreference }), { suggestion: suggestion.label });
       const versionId = `v${i + 2}`;
-      await renderEvaluateMaybeImprove(jobId, { versionId, label: suggestion.label, description: suggestion.reason || suggestion.expectedChange, plan, assets, analyses, allowAutoRegenerate: false });
-      await renderHdForVersion(jobId, versionId, '9:16');
+      try {
+        updateJob(jobId, { status: 'rendering_versions', stage: `正在生成第 ${i + 2} 个版本：${suggestion.label}`, progress: 74 + i * 10 }, 'variant directing');
+        const plan = await timedJobStep(jobId, 'qwen_variant_plan', () => createCommercialVariantPlanWithQwen({ assets, analyses, basePlan, suggestion, preference: userPreference, runtime }), { suggestion: suggestion.label });
+        await renderEvaluateMaybeImprove(jobId, { versionId, label: suggestion.label, description: suggestion.reason || suggestion.expectedChange, plan, assets, analyses, allowAutoRegenerate: false, runtime });
+        try { await renderHdForVersion(jobId, versionId, '9:16'); }
+        catch (hdError) {
+          recordJobMetric(jobId, { name: 'variant_hd_failed', detail: { versionId, error: hdError instanceof Error ? hdError.message : String(hdError) } });
+          const jobAfterPreview = readJob(jobId);
+          const previewOnly = jobAfterPreview?.versions.find((item) => item.versionId === versionId);
+          if (previewOnly) markVersion(jobId, { ...previewOnly, hdStatus: 'failed', error: hdError instanceof Error ? hdError.message : String(hdError) });
+        }
+      } catch (variantError) {
+        markVersionFailed(jobId, versionId, suggestion.label, variantError);
+        recordJobMetric(jobId, { name: 'variant_failed', detail: { versionId, error: variantError instanceof Error ? variantError.message : String(variantError) } });
+        markFirstPlayableIfNeeded(jobId, versionId);
+      }
     }
 
     summarizeQuality(jobId);
@@ -271,11 +336,12 @@ export async function processCreateVlog(jobId: string, payload: { assets?: Uploa
   }
 }
 
-export async function processReviseVlog(jobId: string, payload: { suggestion: DirectorRevisionSuggestion }) {
+export async function processReviseVlog(jobId: string, payload: { suggestion: DirectorRevisionSuggestion; language?: 'zh' | 'en'; aiProvider?: 'qwen' | 'gemini' }) {
   try {
     const job = readJob(jobId);
     if (!job) throw new Error(`找不到任务：${jobId}`);
     const jobDir = getJobDir(jobId);
+    const runtime = runtimeFromJobOrPayload(job, payload);
     const assets = job.assets || readJsonFile<UploadedAsset[]>(path.resolve(jobDir, 'assets.json'));
     const analyses = job.analysis || readJsonFile<AssetAnalysis[]>(path.resolve(jobDir, 'analysis.json'));
     const baseVersion = job.versions.find((item) => item.versionId === job.activeVersionId) || job.versions[0];
@@ -285,8 +351,8 @@ export async function processReviseVlog(jobId: string, payload: { suggestion: Di
     updateJob(jobId, { status: 'revising', stage: `Worker 正在按「${suggestion.label}」重新导演`, progress: 70 }, 'revision');
     const userPreference = getUserPreferenceProfile(job.userId);
     if (userPreference) updateJob(jobId, { userPreferenceSnapshot: userPreference, personalizationHint: userPreference.promptHint }, 'personalization applied revision');
-    const plan = await timedJobStep(jobId, 'qwen_revise_plan', () => reviseDirectorPlanWithQwen({ assets, analyses, currentPlan, revision: suggestion, preference: userPreference }), { suggestion: suggestion.label });
-    const revisedVersion = await renderEvaluateMaybeImprove(jobId, { versionId, label: suggestion.label, description: suggestion.reason || suggestion.expectedChange, plan, assets, analyses, allowAutoRegenerate: true });
+    const plan = await timedJobStep(jobId, 'qwen_revise_plan', () => reviseDirectorPlanWithQwen({ assets, analyses, currentPlan, revision: suggestion, preference: userPreference, runtime }), { suggestion: suggestion.label });
+    const revisedVersion = await renderEvaluateMaybeImprove(jobId, { versionId, label: suggestion.label, description: suggestion.reason || suggestion.expectedChange, plan, assets, analyses, allowAutoRegenerate: true, runtime });
     updateJob(jobId, { status: 'partial_ready', stage: `新版本预览与质量评估已完成：${revisedVersion.label}，正在生成高清版`, progress: 84, activeVersionId: revisedVersion.versionId }, 'revision preview quality ready');
     await renderHdForVersion(jobId, revisedVersion.versionId, '9:16');
     summarizeQuality(jobId);

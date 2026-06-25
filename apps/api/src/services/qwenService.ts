@@ -25,12 +25,34 @@ import type {
   VlogPlan,
   VlogQualityEvaluation,
   UserPreferenceProfile,
+  AiRuntimeOptions,
 } from '@ai-vlog/shared';
 import { config } from '../config';
 import { extractVideoFrames, toDataUrl } from '../utils/mediaUtils';
 import { getBgmById, listBgms } from './bgmCatalog';
 
 type QwenMessage = { role: 'system' | 'user' | 'assistant'; content: any };
+type RuntimeOptions = AiRuntimeOptions | undefined;
+
+function normalizeRuntimeOptions(options?: AiRuntimeOptions): Required<AiRuntimeOptions> {
+  const rawProvider = (options?.aiProvider || config.defaultAiProvider || 'qwen').toLowerCase();
+  return {
+    aiProvider: rawProvider === 'gemini' ? 'gemini' : 'qwen',
+    language: options?.language === 'en' ? 'en' : 'zh',
+  };
+}
+
+function languageInstruction(options?: AiRuntimeOptions) {
+  const runtime = normalizeRuntimeOptions(options);
+  return runtime.language === 'en'
+    ? 'All user-facing text fields must be in English: title, subtitle, storyArc, mood, captions, ending.text, hashtags, directorComment, revisionSuggestions.label, revisionSuggestions.instruction, revisionSuggestions.reason, quality problems/strengths/recommendationReason. Keep JSON keys unchanged.'
+    : '所有面向用户展示的文本必须使用中文：title、subtitle、storyArc、mood、caption、ending.text、hashtags、directorComment、revisionSuggestions 的按钮文案和说明、质量评估问题与推荐理由。JSON 字段名保持英文。';
+}
+
+function runtimeLabel(options?: AiRuntimeOptions) {
+  const runtime = normalizeRuntimeOptions(options);
+  return runtime.aiProvider === 'gemini' ? 'Gemini' : 'Qwen';
+}
 type RevisionRequest = DirectorRevisionSuggestion | string;
 
 const visualStyles: VisualStyle[] = ['warm', 'rec', 'cute', 'cinematic', 'beat', 'social', 'food', 'night', 'travel', 'city', 'minimal'];
@@ -75,9 +97,12 @@ const packVisualRules: Record<VisualStylePack, {
   night_mood: { layouts: ['cinematic_frame', 'vertical_crop', 'rec_camera'], captionStyles: ['cinematic_subtitle', 'reflective', 'location_caption'], stickers: ['night_label', 'timecode'], overlays: ['dark_night', 'film_grain', 'soft_vignette'], motions: ['calm_breathing', 'slow_zoom'], transitions: ['fade', 'blur_crossfade'] },
 };
 
-function requireQwenKey() {
-  if (!config.qwenApiKey || config.mockQwen) {
-    throw new Error('当前版本已移除固定兜底文案和 MOCK 生成。请在 .env 配置 QWEN_API_KEY，并设置 MOCK_QWEN=false。');
+function requireAiKey(options?: AiRuntimeOptions) {
+  const runtime = normalizeRuntimeOptions(options);
+  const apiKey = runtime.aiProvider === 'gemini' ? config.geminiApiKey : config.qwenApiKey;
+  if (!apiKey || config.mockQwen) {
+    const keyName = runtime.aiProvider === 'gemini' ? 'GEMINI_API_KEY' : 'QWEN_API_KEY';
+    throw new Error(`当前版本已移除固定兜底文案和 MOCK 生成。请在 .env 配置 ${keyName}，并设置 MOCK_QWEN=false。`);
   }
 }
 
@@ -86,17 +111,25 @@ async function qwenChat(params: {
   messages: QwenMessage[];
   temperature?: number;
   responseFormatJson?: boolean;
+  runtime?: AiRuntimeOptions;
 }) {
-  requireQwenKey();
-  const url = `${config.qwenBaseUrl.replace(/\/$/, '')}/chat/completions`;
+  const runtime = normalizeRuntimeOptions(params.runtime);
+  requireAiKey(runtime);
+  const useGemini = runtime.aiProvider === 'gemini';
+  const baseUrl = useGemini ? config.geminiBaseUrl : config.qwenBaseUrl;
+  const apiKey = useGemini ? config.geminiApiKey : config.qwenApiKey;
+  const model = useGemini
+    ? (params.model === config.qwenVlModel ? config.geminiVlModel : config.geminiTextModel)
+    : params.model;
+  const url = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${config.qwenApiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: params.model,
+      model,
       messages: params.messages,
       temperature: params.temperature ?? 0.5,
       ...(params.responseFormatJson ? { response_format: { type: 'json_object' } } : {}),
@@ -104,7 +137,7 @@ async function qwenChat(params: {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Qwen API 调用失败 ${res.status}: ${text}`);
+    throw new Error(`${runtimeLabel(runtime)} API 调用失败 ${res.status}: ${text}`);
   }
   const json = await res.json();
   return json.choices?.[0]?.message?.content ?? '';
@@ -344,7 +377,7 @@ function normalizeAnalysis(raw: any, asset: UploadedAsset): AssetAnalysis {
     badReasons: stringArray(raw?.badReasons, 'badReasons', 8, 60, false),
     suggestedRole: optionalEnum(raw?.suggestedRole, roles),
     usableSegments,
-    captions: stringArray(raw?.captions, 'captions', 5, 80, false),
+    captions: stringArray(raw?.captions, 'captions', 5, 48, false),
     tags: stringArray(raw?.tags, 'tags', 8, 30, false),
   };
 }
@@ -493,15 +526,17 @@ const packDefaults: Record<VisualStylePack, {
   night_mood: { visualStyle: 'night', fontToken: 'clean_sans', titleFontToken: 'cinematic_serif', captionFontToken: 'clean_sans', accentColor: '#b8c7ff', textColor: '#f3f5ff', captionBgColor: 'rgba(5,8,28,.52)' },
 };
 
-export async function analyzeAssetsWithQwen(assets: UploadedAsset[], jobDir: string): Promise<AssetAnalysis[]> {
-  requireQwenKey();
+export async function analyzeAssetsWithQwen(assets: UploadedAsset[], jobDir: string, runtime?: AiRuntimeOptions): Promise<AssetAnalysis[]> {
+  requireAiKey(runtime);
   const results: AssetAnalysis[] = [];
   for (let i = 0; i < assets.length; i++) {
     const asset = assets[i];
     const content: any[] = [
       {
         type: 'text',
-        text: `你是生活 Vlog AI 导演的素材分析员。请只根据用户真实素材本身分析，不要套模板，不要写固定文案，不要编造画面中没有的事。\n\n输出严格 JSON：{"summary":"","emotion":"warm|cute|dynamic|cinematic|calm|food|city|night|pet|family|travel|unknown","scene":"","highlightScore":0.0,"qualityScore":0.0,"stabilityScore":0.0,"emotionScore":0.0,"storyValue":0.0,"detectedSubjects":["人/宠物/食物/城市/家庭等主体"],"badReasons":["模糊/太暗/重复/无意义/晃动等，没有则空数组"],"suggestedRole":"opening|context|build|detail|interaction|highlight|emotion_peak|funny|quiet|travel|food|pet|kid|city|night|ending","usableSegments":[{"start":0,"end":5,"reason":"为什么这段可用"}],"captions":["根据该素材画面可写的候选字幕，可为空"],"tags":[""]}`,
+        text: `${languageInstruction(runtime)}
+
+你是生活 Vlog AI 导演的素材分析员。请只根据用户真实素材本身分析，不要套模板，不要写固定文案，不要编造画面中没有的事。\n\n输出严格 JSON：{"summary":"","emotion":"warm|cute|dynamic|cinematic|calm|food|city|night|pet|family|travel|unknown","scene":"","highlightScore":0.0,"qualityScore":0.0,"stabilityScore":0.0,"emotionScore":0.0,"storyValue":0.0,"detectedSubjects":["人/宠物/食物/城市/家庭等主体"],"badReasons":["模糊/太暗/重复/无意义/晃动等，没有则空数组"],"suggestedRole":"opening|context|build|detail|interaction|highlight|emotion_peak|funny|quiet|travel|food|pet|kid|city|night|ending","usableSegments":[{"start":0,"end":5,"reason":"为什么这段可用"}],"captions":["根据该素材画面可写的候选字幕，可为空"],"tags":[""]}`,
       },
     ];
 
@@ -521,6 +556,7 @@ export async function analyzeAssetsWithQwen(assets: UploadedAsset[], jobDir: str
       messages: [{ role: 'user', content }],
       temperature: 0.18,
       responseFormatJson: true,
+      runtime,
     });
     fs.mkdirSync(jobDir, { recursive: true });
     fs.writeFileSync(path.resolve(jobDir, `${asset.id}-qwen-vl-raw.txt`), text, 'utf-8');
@@ -655,7 +691,7 @@ function normalizeScene(scene: any, assets: UploadedAsset[], analyses: AssetAnal
     sourceStart,
     sourceEnd,
     duration,
-    caption: mustText(scene?.caption, `scenes[${index}].caption`, 80),
+    caption: mustText(scene?.caption, `scenes[${index}].caption`, 48),
     fontToken: optionalEnum(scene?.fontToken, fontTokens) || packDefaults[visualStylePack].captionFontToken,
     role: enumValue(scene?.role, roles, `scenes[${index}].role`),
     sceneType: optionalEnum(scene?.sceneType, sceneTypes),
@@ -773,9 +809,11 @@ JSON shape:
   return `输出严格 JSON，不要 Markdown。所有标题、字幕、结尾、字体、字号、颜色、镜头顺序、转场、贴纸、布局、动效、优化按钮都必须由你根据本次素材决定，程序不再提供固定兜底文案。\n\n字段说明：\nopening.type: ${openingTypes.join('|')}\nending.style: ${endingStyles.join('|')}\nvisualStyle: ${visualStyles.join('|')}\nvisualStabilityMode: stable|balanced|dynamic\npace: ${paces.join('|')}\nscene.role: ${roles.join('|')}\nscene.transitionIn: ${transitions.join('|')}\nscene.motion: ${motions.join('|')}\nscene.layout: ${layouts.join('|')}\nscene.captionStyle: ${captionStyles.join('|')}\nscene.stickers: ${stickerTypes.join('|')}\nscene.overlays: ${overlays.join('|')}\n\nJSON 格式：{"title":"","subtitle":"","storyType":"","storyArc":"按开头-铺垫-高光-收尾描述完整故事线","mood":"","visualStyle":"从 visualStyle 允许值中选择","visualStabilityMode":"stable|balanced|dynamic","pace":"从 pace 允许值中选择","duration":45,"bgmId":"必须来自BGM候选id","bgmMood":"","typography":{"fontFamily":"字体栈，例如 Arial, Microsoft YaHei, PingFang SC, sans-serif","titleFontSize":82,"subtitleFontSize":34,"captionFontSize":46,"endingFontSize":54,"fontWeight":800,"textColor":"#ffffff","accentColor":"#ffe1bd","captionBgColor":"rgba(0,0,0,.42)","titlePosition":"top|center|bottom","captionPosition":"top|center|bottom","textAnimation":"fade_up|typewriter|pop|slide|none"},"opening":{"type":"从 opening.type 允许值中选择","assetId":"可选，从素材里选封面","duration":3,"title":"","subtitle":"","motion":"slow_zoom","layout":"vertical_crop","stickers":["heart"],"overlays":["warm_glow"]},"scenes":[{"assetId":"","type":"video|image","sourceStart":0,"sourceEnd":5,"duration":5,"caption":"","role":"从 scene.role 允许值中选择","sceneType":"life|pet|kid|family|food|city|travel|night|home|outdoor|unknown","transitionIn":"从 scene.transitionIn 允许值中选择","transitionDuration":12,"motion":"从 scene.motion 允许值中选择","motionIntensity":0.6,"layout":"从 scene.layout 允许值中选择","captionStyle":"从 scene.captionStyle 允许值中选择","emphasis":"normal|soft|strong","stickers":["heart"],"overlays":["soft_vignette"],"highlightWords":[""]}],"ending":{"text":"","duration":4,"style":"从 ending.style 允许值中选择","stickers":["heart"],"overlays":["soft_vignette"]},"hashtags":[""],"directorComment":"解释为什么这样编排","revisionSuggestions":[{"id":"短英文或拼音id","label":"按钮文案","instruction":"点击后重新导演的具体指令","reason":"为什么适合这批素材","expectedChange":"重新生成后会怎么变"}]}`;
 }
 
-function buildCommonPrompt(assets: UploadedAsset[], analyses: AssetAnalysis[], preference?: UserPreferenceProfile) {
+function buildCommonPrompt(assets: UploadedAsset[], analyses: AssetAnalysis[], preference?: UserPreferenceProfile, runtime?: AiRuntimeOptions) {
   const availableBgms = listBgms().map((b) => ({ id: b.id, title: b.title, mood: b.mood, bpm: b.bpm, fileNames: b.fileNames, exists: b.exists }));
-  return `用户上传素材是乱序的，你要自己把素材编排成有序故事。用户不挑素材、不选模板、不写故事，BGM 也只能从给定列表里自动选。
+  return `${languageInstruction(runtime)}
+
+用户上传素材是乱序的，你要自己把素材编排成有序故事。用户不挑素材、不选模板、不写故事，BGM 也只能从给定列表里自动选。
 
 要求：
 1. 必须根据素材分析自动选择镜头和顺序，形成开头、铺垫、情绪高光、收尾；上传素材是乱序的，你必须重新编排。
@@ -784,9 +822,11 @@ function buildCommonPrompt(assets: UploadedAsset[], analyses: AssetAnalysis[], p
 4. 必须自己决定每个 scene 的 transitionIn、motion、layout、captionStyle、stickers、overlays；这些字段就是你调用 Remotion 组件库的方式。
 5. 不要每个 scene 都用同样组件。你必须先选 visualStylePack，再让 opening、ending、captionStyle、layout、stickers、overlays、fontToken 与该风格包一致：宠物 cute_pet；亲子 kid_playful；吃饭/咖啡 food_diary；城市通勤 city_rec；旅行/风景 travel_postcard；夜晚 night_mood。
 6. 宠物/亲子/吃饭/城市/旅行必须生成明显不同的视觉语言。禁止所有视频都用渐变开头、白色圆角字幕卡、GOOD DAY 标签、爱心贴纸。
+7. 字幕必须短、自然、口语化：每个 scene.caption 不超过 18 个汉字或 36 个英文字符；禁止换行、禁止空行、禁止把整段旁白放进字幕卡；字幕卡不能遮挡主体。
+8. cute_bubble / speech_bubble 只能是小气泡，不允许生成需要大面积白色卡片承载的长字幕。
 7. 城市通勤优先 mono_rec、rec_bar、rec_camera、rec_frame/timecode/progress_bar/city_label；旅行优先 editorial/travel_stamp、travel_postcard、cinematic_frame、travel_label/film_grain；吃饭优先 food_card、food_label/cafe_label、elegant/food 字体；宠物亲子优先 rounded/handwritten、cute_bubble、paw/heart/star，但不要过量。
 6. 可以丢弃无意义素材，不必全部使用；但不能使用不存在的 assetId。
-7. 字幕、标题、结尾必须和素材有关，不能写固定模板话术。
+9. 字幕、标题、结尾必须和素材有关，不能写固定模板话术。
 8. revisionSuggestions 也必须根据这批素材动态生成 3-5 个，不要每次都一样。
 9. bgmId 必须来自 BGM 候选 id。即使对应 MP3 还没上传，也要按情绪选择最合适的候选 id。
 
@@ -813,6 +853,7 @@ async function normalizeDirectorPlanWithSelfRepair(params: {
   systemPrompt: string;
   revision?: DirectorRevisionSuggestion;
   contextLabel: string;
+  runtime?: AiRuntimeOptions;
 }): Promise<VlogPlan> {
   let parsed: any;
   try {
@@ -829,6 +870,7 @@ async function normalizeDirectorPlanWithSelfRepair(params: {
       ],
       temperature: 0.35,
       responseFormatJson: true,
+      runtime: params.runtime,
     });
     try {
       const repaired = parseJsonFromText<any>(repairedText);
@@ -840,9 +882,9 @@ async function normalizeDirectorPlanWithSelfRepair(params: {
   }
 }
 
-export async function createDirectorPlanWithQwen(assets: UploadedAsset[], analyses: AssetAnalysis[], preference?: UserPreferenceProfile): Promise<VlogPlan> {
-  requireQwenKey();
-  const prompt = buildCommonPrompt(assets, analyses, preference);
+export async function createDirectorPlanWithQwen(assets: UploadedAsset[], analyses: AssetAnalysis[], preference?: UserPreferenceProfile, runtime?: AiRuntimeOptions): Promise<VlogPlan> {
+  requireAiKey(runtime);
+  const prompt = buildCommonPrompt(assets, analyses, preference, runtime);
   const systemPrompt = '你是专业生活 Vlog AI 导演。你负责从真实素材中建立故事、选择镜头、设计字体，并调用 AI 可用的 Remotion 组件库参数。禁止输出固定模板话术。你还要参考用户历史偏好，让成片越来越像用户喜欢的样子。';
   const text = await qwenChat({
     model: config.qwenTextModel,
@@ -852,8 +894,9 @@ export async function createDirectorPlanWithQwen(assets: UploadedAsset[], analys
     ],
     temperature: 0.78,
     responseFormatJson: true,
+    runtime,
   });
-  return normalizeDirectorPlanWithSelfRepair({ rawText: text, assets, analyses, originalPrompt: prompt, systemPrompt, contextLabel: 'createDirectorPlan' });
+  return normalizeDirectorPlanWithSelfRepair({ rawText: text, assets, analyses, originalPrompt: prompt, systemPrompt, runtime, contextLabel: 'createDirectorPlan' });
 }
 
 function normalizeRevisionRequest(revision: RevisionRequest): DirectorRevisionSuggestion {
@@ -875,10 +918,11 @@ export async function reviseDirectorPlanWithQwen(params: {
   currentPlan: VlogPlan;
   revision: RevisionRequest;
   preference?: UserPreferenceProfile;
+  runtime?: AiRuntimeOptions;
 }): Promise<VlogPlan> {
-  requireQwenKey();
+  requireAiKey(params.runtime);
   const revision = normalizeRevisionRequest(params.revision);
-  const prompt = `${buildCommonPrompt(params.assets, params.analyses, params.preference)}\n\n用户点击了上一次由 AI 根据素材生成的优化按钮：${JSON.stringify(revision)}\n上一版导演方案：${JSON.stringify(params.currentPlan)}\n\n请重新导演一版。必须重新决定镜头顺序、故事节奏、字幕、字体、转场、贴纸、覆盖层、BGM 和新的 revisionSuggestions。不要只改标题。`;
+  const prompt = `${buildCommonPrompt(params.assets, params.analyses, params.preference, params.runtime)}\n\n用户点击了上一次由 AI 根据素材生成的优化按钮：${JSON.stringify(revision)}\n上一版导演方案：${JSON.stringify(params.currentPlan)}\n\n请重新导演一版。必须重新决定镜头顺序、故事节奏、字幕、字体、转场、贴纸、覆盖层、BGM 和新的 revisionSuggestions。不要只改标题。`;
   const systemPrompt = '你是生活 Vlog 的二次导演。你必须按用户点击的 AI 优化建议重新组合 Remotion 组件，而不是套固定模板。';
   const text = await qwenChat({
     model: config.qwenTextModel,
@@ -888,8 +932,9 @@ export async function reviseDirectorPlanWithQwen(params: {
     ],
     temperature: 0.82,
     responseFormatJson: true,
+    runtime: params.runtime,
   });
-  return normalizeDirectorPlanWithSelfRepair({ rawText: text, assets: params.assets, analyses: params.analyses, originalPrompt: prompt, systemPrompt, revision, contextLabel: 'reviseDirectorPlan' });
+  return normalizeDirectorPlanWithSelfRepair({ rawText: text, assets: params.assets, analyses: params.analyses, originalPrompt: prompt, systemPrompt, revision, runtime: params.runtime, contextLabel: 'reviseDirectorPlan' });
 }
 
 
@@ -899,9 +944,10 @@ export async function createCommercialVariantPlanWithQwen(params: {
   basePlan: VlogPlan;
   suggestion: DirectorRevisionSuggestion;
   preference?: UserPreferenceProfile;
+  runtime?: AiRuntimeOptions;
 }): Promise<VlogPlan> {
-  requireQwenKey();
-  const prompt = `${buildCommonPrompt(params.assets, params.analyses, params.preference)}\n\n这是商业化多版本生成，不是用户手动选择。请根据上一次 AI 生成的建议自动生成一个差异明显的新版本。\n基础版导演方案：${JSON.stringify(params.basePlan)}\n本次版本方向：${JSON.stringify(params.suggestion)}\n\n要求：这个版本要和基础版在故事重点、节奏、组件组合、字幕表达、BGM 选择上有明显差异，但仍然必须真实基于素材。`;
+  requireAiKey(params.runtime);
+  const prompt = `${buildCommonPrompt(params.assets, params.analyses, params.preference, params.runtime)}\n\n这是商业化多版本生成，不是用户手动选择。请根据上一次 AI 生成的建议自动生成一个差异明显的新版本。\n基础版导演方案：${JSON.stringify(params.basePlan)}\n本次版本方向：${JSON.stringify(params.suggestion)}\n\n要求：这个版本要和基础版在故事重点、节奏、组件组合、字幕表达、BGM 选择上有明显差异，但仍然必须真实基于素材。`;
   const systemPrompt = '你是商业化生活 Vlog 多版本导演。你必须为同一批真实素材生成差异明显、可供用户选择的一版视频方案。';
   const text = await qwenChat({
     model: config.qwenTextModel,
@@ -911,8 +957,9 @@ export async function createCommercialVariantPlanWithQwen(params: {
     ],
     temperature: 0.84,
     responseFormatJson: true,
+    runtime: params.runtime,
   });
-  return normalizeDirectorPlanWithSelfRepair({ rawText: text, assets: params.assets, analyses: params.analyses, originalPrompt: prompt, systemPrompt, revision: params.suggestion, contextLabel: 'commercialVariantPlan' });
+  return normalizeDirectorPlanWithSelfRepair({ rawText: text, assets: params.assets, analyses: params.analyses, originalPrompt: prompt, systemPrompt, revision: params.suggestion, runtime: params.runtime, contextLabel: 'commercialVariantPlan' });
 }
 
 export function listRevisionPresets() {
@@ -948,9 +995,10 @@ export async function evaluateVlogPlanWithQwen(params: {
   analyses: AssetAnalysis[];
   plan: VlogPlan;
   versionLabel?: string;
+  runtime?: AiRuntimeOptions;
 }): Promise<VlogQualityEvaluation> {
-  requireQwenKey();
-  const prompt = `你是商业化生活 Vlog 的质量评审，不是导演。请严格评估这版视频是否值得用户保存/分享。不要安慰性打高分。\n\n素材列表：${JSON.stringify(params.assets.map((a) => ({ id: a.id, name: a.originalName, type: a.type, durationSeconds: a.durationSeconds })))}\n素材分析：${JSON.stringify(params.analyses)}\n当前导演方案：${JSON.stringify(params.plan)}\n\n请从以下维度打 0-100 分：故事连贯、情绪价值、字幕自然度、BGM 匹配、素材使用、视觉风格、分享价值。\n如果 overallScore 低于 ${config.qualityThreshold}，或问题会明显影响用户保存/分享，请 shouldRegenerate=true，并给出 improvementInstruction，让导演下一次重新编排。\n\n输出严格 JSON：{"overallScore":86,"storyScore":90,"emotionScore":88,"captionScore":82,"bgmMatchScore":85,"materialUseScore":88,"visualScore":84,"shareWorthinessScore":87,"problems":["具体问题"],"strengths":["具体优点"],"improvementInstruction":"如果需要重导，给导演的明确修改要求；不需要则可为空","shouldRegenerate":false,"recommendationReason":"为什么这版适合推荐给用户"}`;
+  requireAiKey(params.runtime);
+  const prompt = `${languageInstruction(params.runtime)}\n\n你是商业化生活 Vlog 的质量评审，不是导演。请严格评估这版视频是否值得用户保存/分享。不要安慰性打高分。\n\n素材列表：${JSON.stringify(params.assets.map((a) => ({ id: a.id, name: a.originalName, type: a.type, durationSeconds: a.durationSeconds })))}\n素材分析：${JSON.stringify(params.analyses)}\n当前导演方案：${JSON.stringify(params.plan)}\n\n请从以下维度打 0-100 分：故事连贯、情绪价值、字幕自然度、BGM 匹配、素材使用、视觉风格、分享价值。\n如果 overallScore 低于 ${config.qualityThreshold}，或问题会明显影响用户保存/分享，请 shouldRegenerate=true，并给出 improvementInstruction，让导演下一次重新编排。\n\n输出严格 JSON：{"overallScore":86,"storyScore":90,"emotionScore":88,"captionScore":82,"bgmMatchScore":85,"materialUseScore":88,"visualScore":84,"shareWorthinessScore":87,"problems":["具体问题"],"strengths":["具体优点"],"improvementInstruction":"如果需要重导，给导演的明确修改要求；不需要则可为空","shouldRegenerate":false,"recommendationReason":"为什么这版适合推荐给用户"}`;
   const text = await qwenChat({
     model: config.qwenTextModel,
     messages: [
@@ -959,6 +1007,7 @@ export async function evaluateVlogPlanWithQwen(params: {
     ],
     temperature: 0.25,
     responseFormatJson: true,
+    runtime: params.runtime,
   });
   const parsed = parseJsonFromText<any>(text);
   const normalized = normalizeQualityEvaluation(parsed);
@@ -971,8 +1020,9 @@ export async function improveDirectorPlanFromEvaluationWithQwen(params: {
   currentPlan: VlogPlan;
   evaluation: VlogQualityEvaluation;
   preference?: UserPreferenceProfile;
+  runtime?: AiRuntimeOptions;
 }): Promise<VlogPlan> {
-  requireQwenKey();
+  requireAiKey(params.runtime);
   if (!params.evaluation.improvementInstruction) {
     throw new Error('质量评估要求重导，但没有返回 improvementInstruction');
   }
@@ -983,7 +1033,7 @@ export async function improveDirectorPlanFromEvaluationWithQwen(params: {
     reason: params.evaluation.problems.join('；'),
     expectedChange: '提升故事连贯性、情绪价值、字幕自然度和分享价值',
   };
-  const prompt = `${buildCommonPrompt(params.assets, params.analyses, params.preference)}\n\n上一版导演方案：${JSON.stringify(params.currentPlan)}\nAI 质量评估：${JSON.stringify(params.evaluation)}\n\n请根据 quality.improvementInstruction 重新导演一版。必须明显修复 problems 中的问题；可以重新排序素材、删除弱素材、改字幕、改 BGM、改转场/贴纸/滤镜/字体。不要只小幅修改标题。`;
+  const prompt = `${buildCommonPrompt(params.assets, params.analyses, params.preference, params.runtime)}\n\n上一版导演方案：${JSON.stringify(params.currentPlan)}\nAI 质量评估：${JSON.stringify(params.evaluation)}\n\n请根据 quality.improvementInstruction 重新导演一版。必须明显修复 problems 中的问题；可以重新排序素材、删除弱素材、改字幕、改 BGM、改转场/贴纸/滤镜/字体。不要只小幅修改标题。`;
   const systemPrompt = '你是生活 Vlog 质量改进导演。你必须根据质量评估结果重新编排素材和 Remotion 组件，目标是让用户更愿意保存和分享。';
   const text = await qwenChat({
     model: config.qwenTextModel,
@@ -993,6 +1043,7 @@ export async function improveDirectorPlanFromEvaluationWithQwen(params: {
     ],
     temperature: 0.78,
     responseFormatJson: true,
+    runtime: params.runtime,
   });
-  return normalizeDirectorPlanWithSelfRepair({ rawText: text, assets: params.assets, analyses: params.analyses, originalPrompt: prompt, systemPrompt, revision: aiSuggestion, contextLabel: 'qualityImprovePlan' });
+  return normalizeDirectorPlanWithSelfRepair({ rawText: text, assets: params.assets, analyses: params.analyses, originalPrompt: prompt, systemPrompt, revision: aiSuggestion, runtime: params.runtime, contextLabel: 'qualityImprovePlan' });
 }

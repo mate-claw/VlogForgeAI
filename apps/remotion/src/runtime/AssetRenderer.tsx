@@ -7,6 +7,6 @@ export const AssetRenderer: React.FC<{ scene: DirectorScene; volume?: number; st
   const { fps } = useVideoConfig();
   const mediaStyle: React.CSSProperties = { width: '100%', height: '100%', objectFit: 'cover', ...style };
   return scene.type === 'video'
-    ? <Video src={scene.src} startFrom={sourceStartFrame(scene, fps)} playbackRate={scene.playbackRate || 1} volume={volume} style={mediaStyle} />
+    ? <Video src={scene.src} startFrom={sourceStartFrame(scene, fps)} playbackRate={(scene as any).playbackRate || 1} volume={volume} style={mediaStyle} />
     : <Img src={scene.src} style={mediaStyle} />;
 };

@@ -10,7 +10,7 @@ function escapeXml(text: string) {
 export function generateSvgCover(params: { jobId: string; jobDir: string; versionId: string; plan: VlogPlan }): { coverPath: string; coverUrl: string } {
   const coverName = `cover-${params.versionId}.svg`;
   const coverPath = path.resolve(params.jobDir, coverName);
-  const title = escapeXml(params.plan.title || 'AI Vlog');
+  const title = escapeXml(params.plan.title || 'VlogForgeAI');
   const subtitle = escapeXml(params.plan.subtitle || params.plan.storyType || '');
   const bg = params.plan.typography?.accentColor || '#f3b26b';
   const text = params.plan.typography?.textColor || '#ffffff';

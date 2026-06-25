@@ -207,11 +207,11 @@ export async function prepareStableRenderInput(params: {
     return next;
   };
 
-  const proxyRewrittenScenes = visuallySanitized.plan.scenes.map(rewriteScene);
+  const rewrittenScenes = visuallySanitized.plan.scenes.map(rewriteScene);
   const proxyRewrittenPlan = {
     ...visuallySanitized.plan,
-    scenes: proxyRewrittenScenes,
-    clips: proxyRewrittenScenes,
+    scenes: rewrittenScenes,
+    clips: rewrittenScenes,
   };
   const nextInput: VlogRenderInput = { ...params.input, plan: proxyRewrittenPlan, renderFps: targetFps };
   writeProgressFile(params.jobDir, report);

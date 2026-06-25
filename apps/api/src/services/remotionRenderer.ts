@@ -16,6 +16,7 @@ export async function renderWithRemotion(params: {
   const outputFileName = params.outputFileName || 'final.mp4';
   const outputPath = path.resolve(params.jobDir, outputFileName);
   const inputPath = path.resolve(params.jobDir, `${path.basename(outputFileName, '.mp4')}-input.json`);
+  const renderTimeoutMs = Number(process.env.REMOTION_RENDER_TIMEOUT_MS || (params.renderMode === 'preview' || params.input.renderMode === 'preview' ? 240000 : 720000));
   fs.mkdirSync(params.jobDir, { recursive: true });
   const baseInput = { ...params.input, renderMode: params.renderMode || params.input.renderMode || 'final' };
   const prepared = await prepareStableRenderInput({ jobId: params.jobId, jobDir: params.jobDir, input: baseInput });
@@ -41,6 +42,7 @@ export async function renderWithRemotion(params: {
   log(`fpsNormalization=${JSON.stringify(prepared.report)}`);
   log(`composition=DynamicLifeVlog`);
   log(`codec=${config.renderCodec}`);
+  log(`timeoutMs=${renderTimeoutMs}`);
 
   try {
     const serveUrl = await bundle({
@@ -63,10 +65,11 @@ export async function renderWithRemotion(params: {
       codec: config.renderCodec as 'h264',
       outputLocation: outputPath,
       inputProps: input,
-      onProgress: ({ progress }) => log(`render ${Math.round(progress * 100)}%`),
+      onProgress: ({ progress }: any) => log(`render ${Math.round(progress * 100)}%`),
       overwrite: true,
       crf: input.renderMode === 'preview' ? 30 : 18,
-    });
+      timeoutInMilliseconds: renderTimeoutMs,
+    } as any);
 
     if (!fs.existsSync(outputPath)) {
       throw new Error(`Remotion 渲染完成但没有找到输出文件：${outputPath}`);

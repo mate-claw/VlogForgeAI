@@ -1,4 +1,8 @@
 export type MediaType = 'video' | 'image';
+export type UiLanguage = 'zh' | 'en';
+export type AiModelProvider = 'qwen' | 'gemini';
+export type AiRuntimeOptions = { language?: UiLanguage; aiProvider?: AiModelProvider };
+
 
 export type VisualStyle =
   | 'warm'
@@ -331,7 +335,6 @@ export type DirectorScene = {
   src: string;
   sourceStart?: number;
   sourceEnd?: number;
-  playbackRate?: number;
   duration: number;
   caption: string;
   fontToken?: FontToken;
@@ -341,6 +344,7 @@ export type DirectorScene = {
   transitionDuration?: number;
   motion: SceneMotion;
   motionIntensity?: number;
+  playbackRate?: number;
   layout: SceneLayout;
   captionStyle: CaptionStyle;
   emphasis?: 'normal' | 'soft' | 'strong';
@@ -499,6 +503,8 @@ export type VlogJob = {
   userId?: string;
   shareVisibility?: ShareVisibility;
   shareSlug?: string;
+  language?: UiLanguage;
+  aiProvider?: AiModelProvider;
   status: VlogJobStatus;
   stage: string;
   progress: number;

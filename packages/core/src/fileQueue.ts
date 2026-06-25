@@ -17,14 +17,6 @@ export type QueueTask<T = unknown> = {
   lastError?: string;
 };
 
-export class NonRetryableTaskError extends Error {
-  nonRetryable = true;
-}
-
-function isNonRetryableError(error: unknown) {
-  return Boolean(error && typeof error === 'object' && 'nonRetryable' in error && (error as { nonRetryable?: unknown }).nonRetryable);
-}
-
 function subdir(name: string) {
   ensureStorageDirs();
   const dir = path.resolve(queueDir, name);
@@ -80,7 +72,7 @@ export function failTask(task: QueueTask, error: unknown) {
   const detail = error instanceof Error ? error.message : String(error);
   task.lastError = detail;
   const processingPath = taskPath('processing', task.taskId);
-  if (!isNonRetryableError(error) && task.attempts < task.maxAttempts) {
+  if (task.attempts < task.maxAttempts) {
     const pendingPath = taskPath('pending', task.taskId);
     fs.writeFileSync(processingPath, JSON.stringify(task, null, 2), 'utf-8');
     if (fs.existsSync(processingPath)) fs.renameSync(processingPath, pendingPath);

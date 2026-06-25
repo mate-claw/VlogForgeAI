@@ -1,6 +1,7 @@
 import React from 'react';
-import { captionShell, renderHighlight, useTextEntrance, type CaptionProps } from './common';
+import { captionShell, normalizeCaptionText, renderHighlight, twoLineClamp, useTextEntrance, type CaptionProps } from './common';
 export const SocialCaption: React.FC<CaptionProps> = ({ scene, typography, visualStyle }) => {
   const enter = useTextEntrance('fade_up');
-  return <div style={captionShell(typography, visualStyle, { ...enter, left: 86, right: 86, bottom: 172, padding: '20px 24px', borderRadius: 24, background: 'rgba(255,255,255,.16)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,.30)', textAlign: 'left', fontSize: Math.max(30, typography.captionFontSize - 6), boxShadow: '0 18px 54px rgba(0,0,0,.30)' }, scene.fontToken)}>{renderHighlight(scene.caption, scene.highlightWords, typography.accentColor)}</div>;
+  const text = normalizeCaptionText(scene.caption, 36);
+  return <div style={captionShell(typography, visualStyle, { ...enter, left: 92, right: 92, bottom: 172, padding: '16px 22px', borderRadius: 22, background: 'rgba(255,255,255,.16)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,.30)', textAlign: 'left', fontSize: Math.min(38, Math.max(28, typography.captionFontSize - 8)), boxShadow: '0 14px 40px rgba(0,0,0,.26)', maxHeight: 122 }, scene.fontToken)}><span style={twoLineClamp}>{renderHighlight(text, scene.highlightWords, typography.accentColor)}</span></div>;
 };

@@ -16,7 +16,17 @@ VlogForgeAI is an AI director for life vlogs. It turns daily photos and videos i
 
 ## 界面预览
 
-> 预览图和演示视频整理中。当前版本可本地启动 Web、API、Worker 后直接体验完整生成流程。
+### 中文界面
+
+![VlogForgeAI 中文界面](docs/index_zh.png)
+
+## 视频演示
+
+- [Wild Kin](docs/Wild%20Kin.mp4)
+- [动物](docs/动物.mp4)
+- [厨房到餐桌的三分钟](docs/厨房到餐桌的三分钟.mp4)
+- [海面之上，静候浪来](docs/海面之上，静候浪来.mp4)
+- [狗狗的午后](docs/狗狗的午后.mp4)
 
 ## 核心能力
 
@@ -84,11 +94,33 @@ docker compose up --build
 当前版本默认使用 OpenAI-compatible 的 Qwen/DashScope 接口。项目设计上不绑定单一模型，后续可以扩展 Gemini、OpenAI、DeepSeek、豆包等多模态模型。
 
 ```env
+DEFAULT_AI_PROVIDER=qwen
+
 QWEN_API_KEY=your_api_key
 QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 QWEN_VL_MODEL=qwen-vl-plus
 QWEN_TEXT_MODEL=qwen-plus
+
+GEMINI_API_KEY=your_gemini_key
+GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+GEMINI_VL_MODEL=gemini-2.5-flash
+GEMINI_TEXT_MODEL=gemini-2.5-flash
+
 MOCK_QWEN=false
+```
+
+To use Gemini by default, set:
+
+```env
+DEFAULT_AI_PROVIDER=gemini
+GEMINI_API_KEY=your_real_gemini_key
+```
+
+To generate only one version per job, set:
+
+```env
+MAX_VERSIONS=1
+AUTO_REGENERATE_MAX=0
 ```
 
 ## 常用命令
@@ -144,13 +176,15 @@ docs/         架构、组件库、QA 和版本说明
 - 增加界面截图、演示视频和示例素材包
 - 增强用户偏好学习和多版本推荐
 
-## 反馈建议
+## 反馈建议 📢
 
-欢迎通过以下方式参与：
+欢迎通过以下方式参与 VlogForgeAI：
 
-1. 提交 Issue 反馈 bug 或建议
-2. 提交 Pull Request 改进代码和文档
-3. 分享生成效果、失败案例和新的视觉风格需求
+👏 1. 可以提交 [Issue](https://github.com/mate-claw/VlogForgeAI/issues) 反馈 bug、使用问题或功能建议
+
+🚀 2. 可以提交 [Pull Request](https://github.com/mate-claw/VlogForgeAI/pulls) 改进代码、文档、模板或视觉效果
+
+🎬 3. 也欢迎分享生成效果、失败案例、素材场景和新的 AI Vlog 风格需求
 
 ## 重要许可证说明
 
@@ -178,6 +212,10 @@ VlogForgeAI is an AI-powered life vlog generator. Upload photos or videos, and t
 - Stability safeguards to reduce artificial shaking and aggressive transitions
 - Web UI, API service, Worker, and Remotion renderer in one monorepo
 - Local file/json mode for development, with production-oriented Redis/PostgreSQL/S3-style drivers available
+
+## Interface Preview
+
+![VlogForgeAI English UI](docs/index_en.png)
 
 ## Quick Start
 

@@ -3,9 +3,53 @@ import { createRoot } from 'react-dom/client';
 import type { AuthSession, BgmItem, CommercialVlogVersion, DirectorRevisionSuggestion, ProductAnalytics, UserPreferenceProfile, VlogJob } from '@ai-vlog/shared';
 import './styles.css';
 
-const API = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
+type Lang = 'zh' | 'en';
+type AiProvider = 'qwen' | 'gemini';
 
-const stageList = ['上传素材', 'AI 素材评分', '个性化导演', '极速预览', 'AI 质量评估', '推荐版本'];
+const API = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
+const BRAND = 'VlogForgeAI';
+
+const copy = {
+  zh: {
+    brandSub: '上传素材，AI 自动剪成生活故事',
+    login: '登录', register: '注册', goLogin: '去登录', logout: '退出', nickname: '昵称', email: '邮箱', password: '密码',
+    language: '语言', chinese: '中文', english: 'English', model: '模型', qwen: '千问', gemini: 'Gemini',
+    prefTitle: 'AI 导演偏好', noPref: '暂无偏好数据', works: '作品', likes: '喜欢', keeps: '保留', feedback: '反馈', style: '风格', pace: '节奏', duration: '片长', morePrefs: '个性化数据',
+    uploadTitle: '1. 上传素材', uploadStrong: '上传视频/图片', uploadHint: '乱序也可以，AI 自动筛选排序。', material: '素材',
+    bgmTitle: '2. BGM 库', bgmHint: 'AI 自动从你的 BGM 库里选。', importBgm: '导入 BGM MP3', bgmFileHint: '保持原文件名，AI 自动匹配。', importing: '导入中...', importCount: (n: number) => `导入 ${n} 个 BGM`, matched: (a: number, b: number) => `已匹配 ${a}/${b} 个 BGM 文件`,
+    generateTitle: '3. 一键成片Vlog', generateBtn: '一键成片Vlog', uploading: '上传中...', ready: '准备就绪', status: '状态', queue: '渲染队列', running: '运行', pending: '等待', cacheHit: '素材分析缓存命中',
+    stages: ['上传素材', 'AI 素材评分', '个性化导演', '极速预览', 'AI 质量评估', '推荐版本'],
+    resultTitle: '4. 生成结果', resultEmptyTitle: '生成结果会显示在这里', waitingPreview: '等待极速预览...', resultEmptyHint: '上传素材后，一键成片Vlog', directorDecision: 'AI 导演决策', directing: 'AI 正在导演中...', noTask: '还没有生成任务', waiting: '等待生成', autoDesc: 'AI 会自动挑素材、讲故事、选 BGM', resultDesc: '结果、版本和优化按钮会直接显示在这里。',
+    story: '故事', bgm: 'BGM', loadedAudio: '已加载音频', missingBgm: '未找到对应 MP3，视频无 BGM', recommendedVersion: 'AI 推荐版本', qualityEval: 'AI 质量评估', qualityDone: 'AI 已完成质量评分。', emotion: '情绪', captions: '字幕', share: '分享', todo: '待优化', storyLine: '故事线', directorNote: '导演说明',
+    openDownload: '打开 / 下载当前版本', openShare: '打开分享页', openCover: '打开封面', keep: '保留这个版本', delete: '删除这个版本', square: '导出 1:1 方形版', like: '喜欢', dislike: '不喜欢', tooManyEffects: '特效太多', tooFast: '节奏太快', tooSlow: '节奏太慢', downloadSquare: '下载 1:1 方形版',
+    reviseTitle: '继续优化：按钮由 AI 根据本次素材生成', generating: '生成中...', debug: '开发调试数据', assetScore: '素材评分', currentPlan: '当前版本 Director Plan', metricsHint: '观测接口', history: '5. 历史作品', noApi: '无法连接 API，请先启动 npm run dev', authFailed: '认证失败', createFailed: '创建任务失败', needMedia: '请先上传视频或图片素材', actionFailed: '操作失败', bgmFailed: 'BGM 导入失败',
+    hdReady: '高清已完成', previewReady: '预览可看 · 高清生成中', versionPending: '生成中', kept: '已保留', aiRecommend: 'AI 推荐', qualityScore: 'AI 质量分', evaluating: 'AI 评估中', pendingEval: '待评估',
+  },
+  en: {
+    brandSub: 'Upload clips and let AI turn them into a life story',
+    login: 'Sign in', register: 'Sign up', goLogin: 'Sign in', logout: 'Sign out', nickname: 'Name', email: 'Email', password: 'Password',
+    language: 'Language', chinese: '中文', english: 'English', model: 'Model', qwen: 'Qwen', gemini: 'Gemini',
+    prefTitle: 'AI Director Profile', noPref: 'No preference data yet', works: 'Works', likes: 'Likes', keeps: 'Kept', feedback: 'Feedback', style: 'Style', pace: 'Pace', duration: 'Duration', morePrefs: 'Personalization data',
+    uploadTitle: '1. Upload media', uploadStrong: 'Upload videos/images', uploadHint: 'Order does not matter. AI will select and sort the best moments.', material: 'Media',
+    bgmTitle: '2. BGM Library', bgmHint: 'AI will choose from your BGM library automatically.', importBgm: 'Import BGM MP3', bgmFileHint: 'Keep original filenames for matching.', importing: 'Importing...', importCount: (n: number) => `Import ${n} BGM files`, matched: (a: number, b: number) => `${a}/${b} BGM files matched`,
+    generateTitle: '3. One-click Vlog', generateBtn: 'Create Vlog', uploading: 'Uploading...', ready: 'Ready', status: 'Status', queue: 'Render queue', running: 'Running', pending: 'Pending', cacheHit: 'Analysis cache hit',
+    stages: ['Upload media', 'AI scoring', 'AI directing', 'Fast preview', 'Quality check', 'Recommended version'],
+    resultTitle: '4. Result', resultEmptyTitle: 'Generated result will appear here', waitingPreview: 'Waiting for fast preview...', resultEmptyHint: 'Upload media, then create a Vlog', directorDecision: 'AI Director Decision', directing: 'AI is directing...', noTask: 'No task yet', waiting: 'Waiting', autoDesc: 'AI will select clips, build a story, and choose BGM', resultDesc: 'Results, versions, and AI optimization buttons will appear here.',
+    story: 'Story', bgm: 'BGM', loadedAudio: 'Audio loaded', missingBgm: 'Matching MP3 not found; video has no BGM', recommendedVersion: 'AI recommended', qualityEval: 'AI quality check', qualityDone: 'AI quality check completed.', emotion: 'Emotion', captions: 'Captions', share: 'Share', todo: 'Needs work', storyLine: 'Story arc', directorNote: 'Director note',
+    openDownload: 'Open / Download version', openShare: 'Open share page', openCover: 'Open cover', keep: 'Keep this version', delete: 'Delete this version', square: 'Export 1:1 square', like: 'Like', dislike: 'Dislike', tooManyEffects: 'Too many effects', tooFast: 'Too fast', tooSlow: 'Too slow', downloadSquare: 'Download 1:1 square',
+    reviseTitle: 'Optimize: buttons are generated by AI from this media', generating: 'Generating...', debug: 'Developer debug data', assetScore: 'Asset score', currentPlan: 'Current Director Plan', metricsHint: 'Metrics endpoint', history: '5. History', noApi: 'Cannot connect to API. Start npm run dev first.', authFailed: 'Authentication failed', createFailed: 'Failed to create task', needMedia: 'Please upload videos or images first', actionFailed: 'Action failed', bgmFailed: 'BGM import failed',
+    hdReady: 'HD ready', previewReady: 'Preview ready · HD rendering', versionPending: 'Generating', kept: 'Kept', aiRecommend: 'AI recommended', qualityScore: 'AI quality', evaluating: 'Evaluating', pendingEval: 'Pending evaluation',
+  },
+} satisfies Record<Lang, Record<string, any>>;
+
+function getInitialLang(): Lang {
+  const saved = window.localStorage.getItem('vlogforgeai.lang');
+  return saved === 'en' ? 'en' : 'zh';
+}
+function getInitialProvider(): AiProvider {
+  const saved = window.localStorage.getItem('vlogforgeai.provider');
+  return saved === 'gemini' ? 'gemini' : 'qwen';
+}
 
 function StepPill({ active, done, children }: { active?: boolean; done?: boolean; children: React.ReactNode }) {
   return <div className={`step ${active ? 'active' : ''} ${done ? 'done' : ''}`}>{children}</div>;
@@ -20,11 +64,11 @@ function useJobPolling(jobId: string | null, onJob: (job: VlogJob) => void, onEr
       try {
         const res = await fetch(`${API}/api/jobs/${jobId}`, { credentials: 'include' });
         const data = await res.json();
-        if (!res.ok || !data.ok) throw new Error(data.error || '查询任务失败');
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to query task');
         if (!stopped) {
           onJob(data.job);
           if (!['completed', 'failed'].includes(data.job.status)) timer = window.setTimeout(tick, 1500);
-          else if (data.job.status === 'failed') onError(data.job.userFacingError || data.job.error || '任务失败');
+          else if (data.job.status === 'failed') onError(data.job.userFacingError || data.job.error || 'Task failed');
         }
       } catch (e) {
         if (!stopped) {
@@ -56,19 +100,19 @@ function qualityClass(score?: number) {
   return 'weak';
 }
 
-function VersionCard({ version, active, kept, deleted, onSelect }: { version: CommercialVlogVersion; active: boolean; kept?: boolean; deleted?: boolean; onSelect: () => void }) {
+function VersionCard({ version, active, kept, deleted, onSelect, t }: { version: CommercialVlogVersion; active: boolean; kept?: boolean; deleted?: boolean; onSelect: () => void; t: Record<string, any> }) {
   const score = version.quality?.overallScore;
   return (
     <button className={`versionCard ${active ? 'active' : ''} ${deleted ? 'deleted' : ''} ${version.isRecommended ? 'recommended' : ''}`} onClick={onSelect}>
       <div className="versionVideoWrap">
-        {version.coverUrl ? <img src={version.coverUrl} className="versionCover" /> : version.previewUrl || version.videoUrl ? <video src={version.previewUrl || version.videoUrl} muted playsInline className="versionVideo" /> : <div className="versionPending">生成中</div>}
-        {kept ? <span className="keptBadge">已保留</span> : null}
-        {version.isRecommended ? <span className="recommendBadge">AI 推荐</span> : null}
+        {version.coverUrl ? <img src={version.coverUrl} className="versionCover" /> : version.previewUrl || version.videoUrl ? <video src={version.previewUrl || version.videoUrl} muted playsInline className="versionVideo" /> : <div className="versionPending">{t.versionPending}</div>}
+        {kept ? <span className="keptBadge">{t.kept}</span> : null}
+        {version.isRecommended ? <span className="recommendBadge">{t.aiRecommend}</span> : null}
       </div>
       <div className="versionInfo">
         <strong>{version.label}</strong>
-        <span>{version.hdStatus === 'ready' ? '高清已完成' : version.previewUrl ? '预览可看 · 高清生成中' : `${version.progress}% · ${version.status}`}</span>
-        <span className={`qualityMini ${qualityClass(score)}`}>{typeof score === 'number' ? `AI 质量分 ${score}` : version.qualityStatus === 'evaluating' ? 'AI 评估中' : '待评估'}</span>
+        <span>{version.hdStatus === 'ready' ? t.hdReady : version.previewUrl ? t.previewReady : `${version.progress}% · ${version.status}`}</span>
+        <span className={`qualityMini ${qualityClass(score)}`}>{typeof score === 'number' ? `${t.qualityScore} ${score}` : version.qualityStatus === 'evaluating' ? t.evaluating : t.pendingEval}</span>
         {version.quality?.recommendationReason ? <small>{version.quality.recommendationReason}</small> : version.description ? <small>{version.description}</small> : null}
       </div>
     </button>
@@ -76,6 +120,9 @@ function VersionCard({ version, active, kept, deleted, onSelect }: { version: Co
 }
 
 function App() {
+  const [lang, setLang] = useState<Lang>(getInitialLang);
+  const [aiProvider, setAiProvider] = useState<AiProvider>(getInitialProvider);
+  const t = copy[lang];
   const [bgms, setBgms] = useState<BgmItem[]>([]);
   const [history, setHistory] = useState<VlogJob[]>([]);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
@@ -93,14 +140,21 @@ function App() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('demo@example.com');
   const [password, setPassword] = useState('123456');
-  const [displayName, setDisplayName] = useState('AI Vlog 用户');
+  const [displayName, setDisplayName] = useState('VlogForgeAI User');
   const playerRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    document.title = BRAND;
+    window.localStorage.setItem('vlogforgeai.lang', lang);
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  }, [lang]);
+  useEffect(() => { window.localStorage.setItem('vlogforgeai.provider', aiProvider); }, [aiProvider]);
 
   const loadMe = () => fetch(`${API}/api/auth/me`, { credentials: 'include' })
     .then((r) => r.json())
     .then((data) => { if (data.ok) { setUser(data.user); loadPreference(); loadAnalytics(); } })
     .catch(() => undefined);
-  const loadBgms = () => fetch(`${API}/api/bgms`, { credentials: 'include' }).then((r) => r.json()).then((data) => setBgms(data.bgms || [])).catch(() => setError('无法连接 API，请先启动 npm run dev'));
+  const loadBgms = () => fetch(`${API}/api/bgms`, { credentials: 'include' }).then((r) => r.json()).then((data) => setBgms(data.bgms || [])).catch(() => setError(t.noApi));
   const loadHistory = () => fetch(`${API}/api/jobs`, { credentials: 'include' }).then((r) => r.json()).then((data) => setHistory(data.jobs || [])).catch(() => undefined);
   const loadPreference = () => fetch(`${API}/api/preferences/me`, { credentials: 'include' }).then((r) => r.json()).then((data) => { if (data.ok) setPreference(data.preference || null); }).catch(() => undefined);
   const loadAnalytics = () => fetch(`${API}/api/analytics/summary`, { credentials: 'include' }).then((r) => r.json()).then((data) => { if (data.ok) setAnalytics(data.analytics || null); }).catch(() => undefined);
@@ -116,12 +170,10 @@ function App() {
         body: JSON.stringify({ email, password, displayName }),
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || '认证失败');
+      if (!res.ok || !data.ok) throw new Error(data.error || t.authFailed);
       setUser(data.user);
       loadHistory(); loadPreference(); loadAnalytics();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   };
 
   const logout = async () => {
@@ -130,21 +182,15 @@ function App() {
   };
 
   useEffect(() => {
-    fetch(`${API}/api/health`, { credentials: 'include' }).catch(() => setError('无法连接 API，请先启动 npm run dev'));
-    loadMe();
-    loadBgms();
-    loadHistory();
-    loadPreference();
-    loadAnalytics();
+    fetch(`${API}/api/health`, { credentials: 'include' }).catch(() => setError(t.noApi));
+    loadMe(); loadBgms(); loadHistory(); loadPreference(); loadAnalytics();
   }, []);
 
   useJobPolling(jobId, (nextJob) => {
     setJob(nextJob);
     if (!selectedVersionId && nextJob.versions?.length) setSelectedVersionId(nextJob.activeVersionId || nextJob.versions[0].versionId);
     if (nextJob.activeVersionId && nextJob.activeVersionId !== selectedVersionId && ['completed', 'partial_ready'].includes(nextJob.status)) setSelectedVersionId(nextJob.activeVersionId);
-    loadHistory();
-    loadPreference();
-    loadAnalytics();
+    loadHistory(); loadPreference(); loadAnalytics();
   }, setError);
 
   const visibleVersions = useMemo(() => (job?.versions || []).filter((v) => !(job?.deletedVersionIds || []).includes(v.versionId)), [job]);
@@ -153,9 +199,22 @@ function App() {
     return visibleVersions.find((item) => item.versionId === selectedVersionId) || visibleVersions[0];
   }, [visibleVersions, selectedVersionId]);
 
-  const activePlan = activeVersion?.plan;
+  const playableVersion = useMemo(() => {
+    if (!visibleVersions.length) return null;
+    const hasUrl = (item?: CommercialVlogVersion | null) => Boolean(item?.videoUrl || item?.previewUrl);
+    if (hasUrl(activeVersion)) return activeVersion;
+    const recommended = visibleVersions.find((item) => item.versionId === job?.recommendedVersionId && hasUrl(item));
+    if (recommended) return recommended;
+    const jobActive = visibleVersions.find((item) => item.versionId === job?.activeVersionId && hasUrl(item));
+    if (jobActive) return jobActive;
+    return visibleVersions.find((item) => hasUrl(item)) || activeVersion;
+  }, [visibleVersions, activeVersion, job?.recommendedVersionId, job?.activeVersionId]);
+
+  const displayVersion = playableVersion || activeVersion;
+  const activePlan = displayVersion?.plan;
   const currentStageIndex = stageIndex(job);
   const existingBgmCount = bgms.filter((b) => b.exists).length;
+  const playableUrl = displayVersion?.videoUrl || displayVersion?.previewUrl;
 
   const handleUploadBgms = async () => {
     if (!libraryFiles.length) return;
@@ -163,19 +222,22 @@ function App() {
     const form = new FormData(); libraryFiles.forEach((file) => form.append('bgm', file));
     try {
       const res = await fetch(`${API}/api/bgm/upload`, { method: 'POST', body: form, credentials: 'include' });
-      const data = await res.json(); if (!res.ok || !data.ok) throw new Error(data.error || 'BGM 导入失败');
+      const data = await res.json(); if (!res.ok || !data.ok) throw new Error(data.error || t.bgmFailed);
       setBgms(data.bgms || []); setLibraryFiles([]);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setUploadingBgm(false); }
   };
 
   const handleCreate = async () => {
-    if (!mediaFiles.length) { setError('请先上传视频或图片素材'); return; }
+    if (!mediaFiles.length) { setError(t.needMedia); return; }
     setSubmitting(true); setJob(null); setJobId(null); setSelectedVersionId(null); setError(null);
-    const form = new FormData(); mediaFiles.forEach((file) => form.append('media', file));
+    const form = new FormData();
+    mediaFiles.forEach((file) => form.append('media', file));
+    form.append('language', lang);
+    form.append('aiProvider', aiProvider);
     try {
       const res = await fetch(`${API}/api/vlog/create`, { method: 'POST', body: form, credentials: 'include' });
-      const data = await res.json(); if (!res.ok || !data.ok) throw new Error(data.error || '创建任务失败');
+      const data = await res.json(); if (!res.ok || !data.ok) throw new Error(data.error || t.createFailed);
       setJobId(data.jobId); setJob(data.job); loadBgms(); loadHistory();
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSubmitting(false); }
@@ -183,7 +245,7 @@ function App() {
 
   const postAction = async (url: string, body: unknown) => {
     const res = await fetch(`${API}${url}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), credentials: 'include' });
-    const data = await res.json(); if (!res.ok || !data.ok) throw new Error(data.error || '操作失败');
+    const data = await res.json(); if (!res.ok || !data.ok) throw new Error(data.error || t.actionFailed);
     if (data.job) setJob(data.job);
     if (job?.jobId) { setJobId(null); window.setTimeout(() => setJobId(job.jobId), 300); }
     loadHistory(); loadPreference(); loadAnalytics();
@@ -192,7 +254,7 @@ function App() {
   const handleRevise = async (suggestion: DirectorRevisionSuggestion) => {
     if (!job?.jobId) return;
     const loadingKey = suggestion.id || suggestion.label; setRevisionLoading(loadingKey); setError(null);
-    try { await postAction('/api/vlog/revise', { jobId: job.jobId, suggestion }); }
+    try { await postAction('/api/vlog/revise', { jobId: job.jobId, suggestion, language: lang, aiProvider }); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setRevisionLoading(null); }
   };
@@ -202,147 +264,128 @@ function App() {
     if (job?.jobId) await postAction('/api/vlog/select-version', { jobId: job.jobId, versionId }).catch(() => undefined);
   };
 
-  const playableUrl = activeVersion?.videoUrl || activeVersion?.previewUrl;
-
   return (
     <div className="page">
-      <header className="hero commercialHero">
-        <div>
-          <div className="eyebrow">Stability V13 · AI Vlog</div>
-          <h1>上线前稳定验收版：更稳、更可测的 AI 生活 Vlog</h1>
-          <p>系统会严格校验 Qwen 返回的 DirectorPlan，失败时自动请求 AI 自修复，并记录 Qwen 与 Remotion 的耗时日志。</p>
-          <div className="heroActions"><span>Schema 校验</span><span>AI 自修复</span><span>耗时观测</span><span>QA 验收</span></div>
+      <header className="topNav">
+        <div className="brandBlock">
+          <div className="brandLogo">VF</div>
+          <div><strong>{BRAND}</strong><span>{t.brandSub}</span></div>
         </div>
-        <div className="phoneMock"><div className="phoneBar" /><div className="phoneText">AI VLOG</div><div className="phoneCard">今日故事<br />已生成</div><div className="phoneSub">预览 · 高清 · 分享</div></div>
+        <div className="topControls">
+          <label className="navSelect"><span>{t.language}</span><select value={lang} onChange={(e) => setLang(e.target.value as Lang)}><option value="zh">{t.chinese}</option><option value="en">{t.english}</option></select></label>
+          <label className="navSelect"><span>{t.model}</span><select value={aiProvider} onChange={(e) => setAiProvider(e.target.value as AiProvider)}><option value="qwen">{t.qwen}</option><option value="gemini">{t.gemini}</option></select></label>
+          {!user ? <div className="topAuth">
+            {authMode === 'register' ? <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t.nickname} /> : null}
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t.email} />
+            <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t.password} type="password" />
+            <button className="primary smallPrimary" onClick={submitAuth}>{authMode === 'login' ? t.login : t.register}</button>
+            <button className="navTextButton" onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}>{authMode === 'login' ? t.register : t.goLogin}</button>
+          </div> : <div className="topUser">
+            <div className="avatar">{(user.displayName || user.email || 'U').slice(0, 1).toUpperCase()}</div>
+            <div className="userText"><strong>{user.displayName}</strong><span>{user.email} · {user.role}</span></div>
+            <button className="navTextButton" onClick={logout}>{t.logout}</button>
+          </div>}
+        </div>
       </header>
 
-      {!user ? <section className="authPanel">
-        <div>
-          <div className="eyebrow">账号系统</div>
-          <h2>{authMode === 'login' ? '登录后生成你的作品' : '注册一个测试账号'}</h2>
-          <p>v13 会严格校验 AI 导演方案，失败时让 AI 自修复，并记录任务耗时与错误，方便上线前验收。</p>
-        </div>
-        <div className="authForm">
-          {authMode === 'register' ? <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="昵称" /> : null}
-          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="邮箱" />
-          <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="密码" type="password" />
-          <button className="primary" onClick={submitAuth}>{authMode === 'login' ? '登录' : '注册并登录'}</button>
-          <button className="secondary" onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}>{authMode === 'login' ? '没有账号？注册' : '已有账号？登录'}</button>
-        </div>
-      </section> : <section className="authPanel compact"><div><strong>{user.displayName}</strong><span>{user.email} · {user.role}</span></div><button className="secondary" onClick={logout}>退出登录</button></section>}
-
       <main className="grid">
-        <section className="panel wide introPanel">
-          <h2>v13 上线前稳定验收</h2>
-          <div className="logicCards four">
-            <div><strong>会校验</strong><span>Qwen 返回的 DirectorPlan 必须符合 schema。</span></div>
-            <div><strong>会自修复</strong><span>字段不合法时，系统会让 Qwen 基于错误重新输出。</span></div>
-            <div><strong>会观测</strong><span>记录 Qwen、Remotion、质量评估等耗时指标。</span></div>
-            <div><strong>会友好失败</strong><span>用户看到产品语言，开发者仍能看到完整日志。</span></div>
+        {user ? <section className="panel wide preferencePanel compactPreference">
+          <div className="compactPrefHeader">
+            <h2>{t.prefTitle}</h2>
+            {analytics ? <div className="compactStats"><span>{t.works} {analytics.generatedJobs}</span><span>{t.likes} {analytics.likes}</span><span>{t.keeps} {analytics.keeps}</span></div> : null}
           </div>
-        </section>
-
-        {user ? <section className="panel wide preferencePanel">
-          <h2>你的 AI 导演偏好画像</h2>
-          {preference ? <div className="prefGrid">
-            <div><strong>{preference.sampleSize}</strong><span>反馈样本</span></div>
-            <div><strong>{preference.preferredVisualStyles.join(' / ') || '待学习'}</strong><span>偏好风格</span></div>
-            <div><strong>{preference.preferredPaces.join(' / ') || '待学习'}</strong><span>偏好节奏</span></div>
-            <div><strong>{preference.preferredDurationSeconds}s</strong><span>偏好片长</span></div>
-          </div> : <p className="hint">还没有足够反馈。生成后点击喜欢、保留、分享或不喜欢，AI 会开始学习。</p>}
-          {preference?.promptHint ? <p className="director"><strong>下一次个性化提示：</strong>{preference.promptHint}</p> : null}
-          {analytics ? <div className="analyticsGrid"><span>作品 {analytics.generatedJobs}</span><span>完成 {analytics.completedJobs}</span><span>反馈 {analytics.feedbackCount}</span><span>喜欢 {analytics.likes}</span><span>保留 {analytics.keeps}</span><span>分享 {analytics.shares}</span><span>推荐命中 {analytics.recommendedSelectedRate ?? 0}%</span><span>最佳均分 {analytics.averageBestQualityScore ?? '-'}</span></div> : null}
+          {preference ? <div className="prefChips">
+            <span>{t.feedback} {preference.sampleSize}</span>
+            <span>{t.style} {preference.preferredVisualStyles.slice(0, 2).join(' / ') || '-'}</span>
+            <span>{t.pace} {preference.preferredPaces.slice(0, 2).join(' / ') || '-'}</span>
+            <span>{t.duration} {preference.preferredDurationSeconds}s</span>
+          </div> : <p className="hint">{t.noPref}</p>}
+          {(preference?.promptHint || analytics) ? <details className="preferenceDetails"><summary>{t.morePrefs}</summary>
+            {preference?.promptHint ? <p>{preference.promptHint}</p> : null}
+            {analytics ? <div className="analyticsInline"><span>Completed {analytics.completedJobs}</span><span>{t.feedback} {analytics.feedbackCount}</span><span>{t.share} {analytics.shares}</span><span>Recommend {analytics.recommendedSelectedRate ?? 0}%</span><span>Best {analytics.averageBestQualityScore ?? '-'}</span></div> : null}
+          </details> : null}
         </section> : null}
 
-        <section className="panel">
-          <h2>1. 上传今天的素材</h2>
-          <label className="uploadBox"><input type="file" multiple accept="video/*,image/*" onChange={(e) => setMediaFiles(Array.from(e.target.files || []))} /><strong>上传视频/图片素材</strong><span>素材可以乱序，AI 会自动筛选和排序。建议 5–30 个短视频/图片。</span></label>
-          <div className="fileList">{mediaFiles.map((file) => <div key={`${file.name}-${file.size}`}>素材：{file.name}</div>)}</div>
+        <section className="panel compactFlowPanel">
+          <h2>{t.uploadTitle}</h2>
+          <label className="uploadBox"><input type="file" multiple accept="video/*,image/*" onChange={(e) => setMediaFiles(Array.from(e.target.files || []))} /><strong>{t.uploadStrong}</strong><span>{t.uploadHint}</span></label>
+          <div className="fileList">{mediaFiles.map((file) => <div key={`${file.name}-${file.size}`}>{t.material}：{file.name}</div>)}</div>
         </section>
 
-        <section className="panel">
-          <h2>2. BGM 库</h2>
-          <p className="hint">BGM 不让用户选。AI 只会从你提供的 BGM 候选里自动选择。</p>
-          <label className="uploadBox small"><input type="file" multiple accept="audio/mpeg,audio/mp3,audio/*" onChange={(e) => setLibraryFiles(Array.from(e.target.files || []))} /><strong>导入你的 BGM MP3</strong><span>文件名保持：温馨回忆.mp3、宠物可爱.mp3、城市日常.mp3 等。</span></label>
-          {libraryFiles.length ? <button className="secondary" onClick={handleUploadBgms} disabled={uploadingBgm}>{uploadingBgm ? '导入中...' : `导入 ${libraryFiles.length} 个 BGM`}</button> : null}
-          <div className="hint">已匹配 {existingBgmCount}/{bgms.length} 个 BGM 文件</div>
+        <section className="panel compactFlowPanel">
+          <h2>{t.bgmTitle}</h2>
+          <p className="hint">{t.bgmHint}</p>
+          <label className="uploadBox small"><input type="file" multiple accept="audio/mpeg,audio/mp3,audio/*" onChange={(e) => setLibraryFiles(Array.from(e.target.files || []))} /><strong>{t.importBgm}</strong><span>{t.bgmFileHint}</span></label>
+          {libraryFiles.length ? <button className="secondary" onClick={handleUploadBgms} disabled={uploadingBgm}>{uploadingBgm ? t.importing : t.importCount(libraryFiles.length)}</button> : null}
+          <div className="hint">{t.matched(existingBgmCount, bgms.length)}</div>
           <div className="bgmList">{bgms.map((bgm) => <span className={bgm.exists ? 'bgm exists' : 'bgm'} key={bgm.id}>{bgm.title}{bgm.exists ? ' ✓' : ''}</span>)}</div>
         </section>
 
-        <section className="panel wide">
-          <h2>3. 一键生成今日 Vlog</h2>
-          <div className="steps">{stageList.map((s, i) => <StepPill key={s} active={currentStageIndex === i} done={currentStageIndex > i}>{s}</StepPill>)}</div>
+        <section className="panel wide compactGeneratePanel">
+          <h2>{t.generateTitle}</h2>
+          <div className="steps">{t.stages.map((s: string, i: number) => <StepPill key={s} active={currentStageIndex === i} done={currentStageIndex > i}>{s}</StepPill>)}</div>
           <div className="progressTrack"><div className="progressFill" style={{ width: `${job?.progress || 0}%` }} /></div>
-          <button className="primary" onClick={handleCreate} disabled={submitting || !mediaFiles.length || !user}>{submitting ? '上传中...' : '一键生成今日 Vlog'}</button>
-          <div className="status">状态：{job?.stage || '准备就绪'} {job ? `· ${job.progress}%` : ''}</div>
-          {job?.renderQueue ? <div className="hint">渲染队列：运行 {job.renderQueue.processing} · 等待 {job.renderQueue.pending}</div> : null}
-          {job?.analysisCacheHits ? <div className="hint">素材分析缓存命中：{job.analysisCacheHits}/{job.assets?.length || 0}</div> : null}
-          {job?.qualitySummary ? <div className="qualitySummary">AI 已评估 {job.qualitySummary.evaluatedVersions} 个版本 · 最佳 {job.qualitySummary.bestScore} 分 · 平均 {job.qualitySummary.averageScore} 分</div> : null}
+          <button className="primary" onClick={handleCreate} disabled={submitting || !mediaFiles.length || !user}>{submitting ? t.uploading : t.generateBtn}</button>
+          <div className="status">{t.status}：{job ? (lang === 'zh' ? job.stage : job.status) : t.ready} {job ? `· ${job.progress}%` : ''}</div>
+          {job?.renderQueue ? <div className="hint">{t.queue}：{t.running} {job.renderQueue.processing} · {t.pending} {job.renderQueue.pending}</div> : null}
+          {job?.analysisCacheHits ? <div className="hint">{t.cacheHit}：{job.analysisCacheHits}/{job.assets?.length || 0}</div> : null}
+          {job?.qualitySummary ? <div className="qualitySummary">AI {job.qualitySummary.evaluatedVersions} · Best {job.qualitySummary.bestScore} · Avg {job.qualitySummary.averageScore}</div> : null}
           {error ? <pre className="error">{error}</pre> : null}
           {job?.userFacingError ? <div className="friendlyError">{job.userFacingError}</div> : null}
         </section>
 
-        {job ? <section className="panel wide result">
-          <h2>4. 生成结果</h2>
+        <section className="panel wide result alwaysResult">
+          <h2>{t.resultTitle}</h2>
           <div className="resultTop commercialResult">
             <div>
-              {playableUrl ? <video ref={playerRef} src={playableUrl} controls playsInline className="video" poster={activeVersion?.coverUrl} /> : <div className="video emptyVideo">等待极速预览...</div>}
-              <div className="versionStrip">
-                {visibleVersions.map((version) => <VersionCard key={version.versionId} version={version} active={activeVersion?.versionId === version.versionId} kept={(job.keptVersionIds || []).includes(version.versionId)} deleted={false} onSelect={() => selectVersion(version.versionId)} />)}
-              </div>
+              {playableUrl ? <video ref={playerRef} src={playableUrl} controls playsInline className="video" poster={displayVersion?.coverUrl} /> : <div className="video emptyVideo"><strong>{t.resultEmptyTitle}</strong><span>{job ? t.waitingPreview : t.resultEmptyHint}</span></div>}
+              <div className="versionStrip">{visibleVersions.map((version) => <VersionCard key={version.versionId} version={version} active={displayVersion?.versionId === version.versionId} kept={(job?.keptVersionIds || []).includes(version.versionId)} deleted={false} onSelect={() => selectVersion(version.versionId)} t={t} />)}</div>
             </div>
-
             <div className="summaryCard">
-              <div className="eyebrow">AI 导演决策</div>
-              <h3>{activePlan?.title || 'AI 正在导演中...'}</h3>
-              <p>{activePlan?.subtitle || job.stage}</p>
+              <div className="eyebrow">{t.directorDecision}</div>
+              <h3>{activePlan?.title || t.directing}</h3>
+              <p>{activePlan?.subtitle || (job ? (lang === 'zh' ? job.stage : job.status) : t.noTask)}</p>
+              {!activePlan ? <div className="resultPlaceholderInfo"><div className="eyebrow">{t.waiting}</div><h3>{t.autoDesc}</h3><p>{t.resultDesc}</p></div> : null}
               {activePlan ? <>
-                <div className="meta"><span>故事：{activePlan.storyType}</span><span>风格：{activePlan.visualStyle}</span><span>节奏：{activePlan.pace}</span></div>
-                <div className="meta"><span>BGM：{activeVersion?.selectedBgm?.title || activePlan.bgmTitle || activePlan.bgmId}</span><span>{activeVersion?.bgmUrl ? '已加载音频' : '未找到对应 MP3，视频无 BGM'}</span></div>
-                {activeVersion?.quality ? <div className={`qualityBox ${qualityClass(activeVersion.quality.overallScore)}`}>
-                  <div><strong>{activeVersion.isRecommended ? 'AI 推荐版本' : 'AI 质量评估'}</strong><span>{activeVersion.quality.overallScore} 分</span></div>
-                  <p>{activeVersion.quality.recommendationReason || 'AI 已完成质量评分。'}</p>
-                  <div className="qualityGrid"><span>故事 {activeVersion.quality.storyScore}</span><span>情绪 {activeVersion.quality.emotionScore}</span><span>字幕 {activeVersion.quality.captionScore}</span><span>BGM {activeVersion.quality.bgmMatchScore}</span><span>分享 {activeVersion.quality.shareWorthinessScore}</span></div>
-                  {activeVersion.quality.problems?.length ? <small>待优化：{activeVersion.quality.problems.join('；')}</small> : null}
+                <div className="meta"><span>{t.story}：{activePlan.storyType}</span><span>{t.style}：{activePlan.visualStyle}</span><span>{t.pace}：{activePlan.pace}</span></div>
+                <div className="meta"><span>{t.bgm}：{displayVersion?.selectedBgm?.title || activePlan.bgmTitle || activePlan.bgmId}</span><span>{displayVersion?.bgmUrl ? t.loadedAudio : t.missingBgm}</span></div>
+                {displayVersion?.quality ? <div className={`qualityBox ${qualityClass(displayVersion.quality.overallScore)}`}>
+                  <div><strong>{displayVersion.isRecommended ? t.recommendedVersion : t.qualityEval}</strong><span>{displayVersion.quality.overallScore}</span></div>
+                  <p>{displayVersion.quality.recommendationReason || t.qualityDone}</p>
+                  <div className="qualityGrid"><span>{t.story} {displayVersion.quality.storyScore}</span><span>{t.emotion} {displayVersion.quality.emotionScore}</span><span>{t.captions} {displayVersion.quality.captionScore}</span><span>{t.bgm} {displayVersion.quality.bgmMatchScore}</span><span>{t.share} {displayVersion.quality.shareWorthinessScore}</span></div>
+                  {displayVersion.quality.problems?.length ? <small>{t.todo}：{displayVersion.quality.problems.join('；')}</small> : null}
                 </div> : null}
-                <p className="director"><strong>故事线：</strong>{activePlan.storyArc}</p>
-                <p className="director"><strong>导演说明：</strong>{activePlan.directorComment}</p>
+                <p className="director"><strong>{t.storyLine}：</strong>{activePlan.storyArc}</p>
+                <p className="director"><strong>{t.directorNote}：</strong>{activePlan.directorComment}</p>
                 <div className="actionRow">
-                  {playableUrl ? <a className="download" href={playableUrl} target="_blank" rel="noreferrer" onClick={() => activeVersion && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: activeVersion.versionId, action: 'download' }).catch(() => undefined)}>打开 / 下载当前版本</a> : null}
-                  {job?.jobId ? <a className="download" href={`${API}/share/${job.jobId}`} target="_blank" rel="noreferrer" onClick={() => activeVersion && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: activeVersion.versionId, action: 'share' }).catch(() => undefined)}>打开分享页</a> : null}
-                  {activeVersion?.coverUrl ? <a className="download secondaryLink" href={activeVersion.coverUrl} target="_blank" rel="noreferrer">打开封面</a> : null}
+                  {playableUrl ? <a className="download" href={playableUrl} target="_blank" rel="noreferrer" onClick={() => displayVersion && job && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: displayVersion.versionId, action: 'download' }).catch(() => undefined)}>{t.openDownload}</a> : null}
+                  {job?.jobId ? <a className="download" href={`${API}/share/${job?.jobId}`} target="_blank" rel="noreferrer" onClick={() => displayVersion && job && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: displayVersion.versionId, action: 'share' }).catch(() => undefined)}>{t.openShare}</a> : null}
+                  {displayVersion?.coverUrl ? <a className="download secondaryLink" href={displayVersion.coverUrl} target="_blank" rel="noreferrer">{t.openCover}</a> : null}
                 </div>
                 <div className="actionRow">
-                  <button className="secondary" onClick={() => activeVersion && postAction('/api/vlog/keep-version', { jobId: job.jobId, versionId: activeVersion.versionId })}>保留这个版本</button>
-                  <button className="secondary" onClick={() => activeVersion && postAction('/api/vlog/delete-version', { jobId: job.jobId, versionId: activeVersion.versionId })}>删除这个版本</button>
-                  <button className="secondary" onClick={() => activeVersion && postAction('/api/vlog/export-square', { jobId: job.jobId, versionId: activeVersion.versionId })}>导出 1:1 方形版</button>
-                  <button className="secondary" onClick={() => activeVersion && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: activeVersion.versionId, action: 'like' })}>喜欢</button>
-                  <button className="secondary" onClick={() => activeVersion && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: activeVersion.versionId, action: 'dislike' })}>不喜欢</button>
-                  <button className="secondary" onClick={() => activeVersion && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: activeVersion.versionId, action: 'too_many_effects' })}>特效太多</button>
-                  <button className="secondary" onClick={() => activeVersion && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: activeVersion.versionId, action: 'too_fast' })}>节奏太快</button>
-                  <button className="secondary" onClick={() => activeVersion && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: activeVersion.versionId, action: 'too_slow' })}>节奏太慢</button>
+                  <button className="secondary" onClick={() => displayVersion && job && postAction('/api/vlog/keep-version', { jobId: job.jobId, versionId: displayVersion.versionId })}>{t.keep}</button>
+                  <button className="secondary" onClick={() => displayVersion && job && postAction('/api/vlog/delete-version', { jobId: job.jobId, versionId: displayVersion.versionId })}>{t.delete}</button>
+                  <button className="secondary" onClick={() => displayVersion && job && postAction('/api/vlog/export-square', { jobId: job.jobId, versionId: displayVersion.versionId })}>{t.square}</button>
+                  <button className="secondary" onClick={() => displayVersion && job && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: displayVersion.versionId, action: 'like' })}>{t.like}</button>
+                  <button className="secondary" onClick={() => displayVersion && job && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: displayVersion.versionId, action: 'dislike' })}>{t.dislike}</button>
+                  <button className="secondary" onClick={() => displayVersion && job && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: displayVersion.versionId, action: 'too_many_effects' })}>{t.tooManyEffects}</button>
+                  <button className="secondary" onClick={() => displayVersion && job && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: displayVersion.versionId, action: 'too_fast' })}>{t.tooFast}</button>
+                  <button className="secondary" onClick={() => displayVersion && job && postAction('/api/vlog/feedback', { jobId: job.jobId, versionId: displayVersion.versionId, action: 'too_slow' })}>{t.tooSlow}</button>
                 </div>
-                {activeVersion?.squareVideoUrl ? <a className="download" href={activeVersion.squareVideoUrl} target="_blank" rel="noreferrer">下载 1:1 方形版</a> : null}
-                <div className="revisionBlock"><div className="revisionTitle">继续优化：按钮由 AI 根据本次素材生成</div><div className="revisionActions">
-                  {(activePlan.revisionSuggestions || []).map((suggestion) => { const key = suggestion.id || suggestion.label; return <button key={key} className="revisionButton" onClick={() => handleRevise(suggestion)} disabled={Boolean(revisionLoading)} title={suggestion.instruction || suggestion.reason || ''}><strong>{revisionLoading === key ? '生成中...' : suggestion.label}</strong><span>{suggestion.reason || suggestion.expectedChange || suggestion.instruction}</span></button>; })}
+                {displayVersion?.squareVideoUrl ? <a className="download" href={displayVersion.squareVideoUrl} target="_blank" rel="noreferrer">{t.downloadSquare}</a> : null}
+                <div className="revisionBlock"><div className="revisionTitle">{t.reviseTitle}</div><div className="revisionActions">
+                  {(activePlan.revisionSuggestions || []).map((suggestion) => { const key = suggestion.id || suggestion.label; return <button key={key} className="revisionButton" onClick={() => handleRevise(suggestion)} disabled={Boolean(revisionLoading)} title={suggestion.instruction || suggestion.reason || ''}><strong>{revisionLoading === key ? t.generating : suggestion.label}</strong><span>{suggestion.reason || suggestion.expectedChange || suggestion.instruction}</span></button>; })}
                 </div></div>
               </> : null}
             </div>
           </div>
+          {job ? <details className="debugDetails"><summary>{t.debug}</summary><div className="columns"><div><h3>{t.assetScore}</h3><pre>{JSON.stringify(job.analysis || [], null, 2)}</pre></div><div><h3>{t.currentPlan}</h3><pre>{JSON.stringify(activePlan || {}, null, 2)}</pre></div></div></details> : null}
+          {job ? <p className="hint">{t.metricsHint}：<code>/api/jobs/{job?.jobId}/metrics</code></p> : null}
+        </section>
 
-          <div className="columns"><div><h3>素材评分</h3><pre>{JSON.stringify(job.analysis || [], null, 2)}</pre></div><div><h3>当前版本 Director Plan</h3><pre>{JSON.stringify(activePlan || {}, null, 2)}</pre></div></div>
-          <p className="hint">v13 观测接口：<code>/api/jobs/{job.jobId}/metrics</code> 可查看 Qwen 和 Remotion 的耗时日志。</p>
-        </section> : null}
-
-        <section className="panel wide">
-          <h2>5. 历史作品</h2>
-          <div className="historyGrid">
-            {history.map((item) => <button key={item.jobId} className="historyCard" onClick={() => { setJobId(item.jobId); setJob(item); setSelectedVersionId(item.activeVersionId || item.versions?.[0]?.versionId || null); }}>
-              <strong>{item.versions?.[0]?.plan?.title || item.jobId}</strong>
-              <span>{item.status} · {item.progress}%</span>
-              <small>{item.updatedAt}</small>
-            </button>)}
-          </div>
+        <section className="panel wide historyPanel">
+          <h2>{t.history}</h2>
+          <div className="historyGrid">{history.map((item) => <button key={item.jobId} className="historyCard" onClick={() => { setJobId(item.jobId); setJob(item); setSelectedVersionId(item.activeVersionId || item.versions?.[0]?.versionId || null); }}><strong>{item.versions?.[0]?.plan?.title || item.jobId}</strong><span>{item.status} · {item.progress}%</span><small>{item.updatedAt}</small></button>)}</div>
         </section>
       </main>
     </div>

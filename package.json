@@ -1,8 +1,8 @@
 {
-  "name": "vlogforgeai",
+  "name": "ai-vlog-h5-qwen-remotion-v20-fast-preview-stable",
   "version": "15.0.0",
-  "private": false,
-  "description": "Turn daily photos and videos into cinematic AI vlogs with multimodal AI, Remotion, and FFmpeg.",
+  "private": true,
+  "description": "v20: fixes preview stuck at 10% by replacing slow all-video 60fps MCI proxy generation with adaptive used-asset-only proxies, timeout fallback, and high-motion safe playback.",
   "workspaces": [
     "apps/*",
     "packages/*"

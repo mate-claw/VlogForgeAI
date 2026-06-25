@@ -124,3 +124,210 @@ pre { max-height: 460px; overflow: auto; padding: 16px; border-radius: 18px; bac
 /* v13 stability QA */
 .friendlyError{margin-top:10px;padding:13px 15px;border-radius:16px;background:rgba(255,211,162,.14);border:1px solid rgba(255,211,162,.28);color:#ffe2bd;font-weight:800;line-height:1.55}
 code{background:rgba(0,0,0,.24);border:1px solid rgba(255,255,255,.10);border-radius:8px;padding:3px 6px;color:#ffe2bd}
+
+/* VlogForgeAI product landing polish */
+body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(255, 191, 129, .22), transparent 32%),
+    radial-gradient(circle at 88% 18%, rgba(255, 122, 92, .14), transparent 30%),
+    linear-gradient(145deg, #160f0c 0%, #0b0a09 52%, #18100d 100%);
+}
+
+.page { width: min(1320px, calc(100% - 40px)); padding-top: 40px; }
+
+.hero.commercialHero {
+  min-height: 560px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 72px;
+  padding: 64px;
+  border-radius: 36px;
+  border: 1px solid rgba(255, 224, 196, .18);
+  background:
+    linear-gradient(120deg, rgba(255, 204, 154, .20), rgba(255, 255, 255, .055) 38%, rgba(255, 255, 255, .035)),
+    radial-gradient(circle at 72% 28%, rgba(255, 161, 104, .16), transparent 28%);
+  box-shadow: 0 34px 110px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.12);
+}
+
+.commercialHero .eyebrow {
+  font-size: 0;
+  margin-bottom: 18px;
+}
+.commercialHero .eyebrow::before {
+  content: "VLOGFORGEAI · AI LIFE VLOG STUDIO";
+  font-size: 13px;
+  letter-spacing: .18em;
+  color: #ffc98f;
+}
+
+.commercialHero h1 {
+  position: relative;
+  max-width: 820px;
+  margin: 0 0 22px;
+  font-size: 0;
+  line-height: 1.04;
+  letter-spacing: -0.055em;
+}
+.commercialHero h1::before {
+  content: "把生活素材自动剪成有故事感的 AI Vlog";
+  display: block;
+  color: #fff7ed;
+  font-size: clamp(46px, 6.1vw, 82px);
+  font-weight: 1000;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.commercialHero p {
+  max-width: 760px;
+  font-size: 0;
+}
+.commercialHero p::before {
+  content: "上传照片或视频，AI 自动理解画面、挑选高光、生成字幕、匹配 BGM，并渲染出可预览、可下载、可分享的短视频。";
+  display: block;
+  color: rgba(255,247,237,.74);
+  font-size: 19px;
+  line-height: 1.8;
+}
+
+.commercialHero .heroActions { margin-top: 30px; gap: 12px; }
+.commercialHero .heroActions span {
+  font-size: 0;
+  padding: 11px 15px;
+  background: rgba(255, 201, 143, .14);
+  border-color: rgba(255, 201, 143, .34);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
+}
+.commercialHero .heroActions span::before { font-size: 14px; color: #ffe2c2; }
+.commercialHero .heroActions span:nth-child(1)::before { content: "多模态理解"; }
+.commercialHero .heroActions span:nth-child(2)::before { content: "AI 导演方案"; }
+.commercialHero .heroActions span:nth-child(3)::before { content: "稳定渲染"; }
+.commercialHero .heroActions span:nth-child(4)::before { content: "多版本优化"; }
+
+.phoneMock {
+  width: 330px;
+  height: 575px;
+  border-radius: 46px;
+  border: 12px solid rgba(255,255,255,.14);
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255,210,168,.22), transparent 25%),
+    linear-gradient(160deg, #17100f, #6f4b35 48%, #19110f);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12), 0 28px 90px rgba(0,0,0,.48);
+}
+.phoneText, .phoneCard, .phoneSub { font-size: 0; }
+.phoneText::before {
+  content: "AI VLOG";
+  font-size: 14px;
+  color: rgba(255,255,255,.76);
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+.phoneCard {
+  margin-top: 54px;
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,.20);
+}
+.phoneCard::before {
+  content: "今日故事\A已生成";
+  white-space: pre;
+  font-size: 31px;
+  line-height: 1.22;
+  color: #fff8ef;
+  font-weight: 1000;
+}
+.phoneSub::before {
+  content: "预览 · 高清 · 分享";
+  font-size: 15px;
+  color: rgba(255,255,255,.74);
+}
+
+.authPanel {
+  margin-top: 24px;
+  max-width: none;
+  background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.065));
+  border: 1px solid rgba(255, 224, 196, .16);
+  color: #fff7ed;
+  box-shadow: 0 22px 75px rgba(0,0,0,.30);
+}
+.authPanel p { color: rgba(255,247,237,.66); }
+.authPanel h2 { color: #fff7ed; }
+.authPanel .eyebrow {
+  color: #ffc98f;
+  font-size: 0;
+}
+.authPanel .eyebrow::before {
+  content: "START CREATING";
+  font-size: 13px;
+}
+.authPanel:not(.compact) h2 {
+  font-size: 0;
+}
+.authPanel:not(.compact) h2::before {
+  content: "登录后开始生成你的 AI Vlog";
+  font-size: 30px;
+  letter-spacing: -0.035em;
+}
+.authPanel:not(.compact) p {
+  max-width: 540px;
+  font-size: 0;
+}
+.authPanel:not(.compact) p::before {
+  content: "保存你的作品历史、版本反馈和偏好画像，让 AI 导演越来越懂你的剪辑口味。";
+  font-size: 15px;
+  line-height: 1.8;
+}
+.authForm input {
+  height: 58px;
+  border-radius: 18px;
+  border-color: rgba(255,255,255,.16);
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 10px 28px rgba(0,0,0,.10);
+}
+.authForm .primary {
+  min-width: 0;
+  height: 58px;
+}
+.authForm .secondary {
+  height: 58px;
+  background: rgba(255,255,255,.08);
+}
+
+.introPanel {
+  background: linear-gradient(135deg, rgba(255, 201, 143, .13), rgba(255,255,255,.055));
+}
+.introPanel h2 {
+  font-size: 0;
+}
+.introPanel h2::before {
+  content: "从素材到成片，只需要一条自动化工作流";
+  font-size: 28px;
+  color: #fff7ed;
+}
+.logicCards.four div strong,
+.logicCards.four div span { font-size: 0; }
+.logicCards.four div strong::before {
+  display: block;
+  font-size: 19px;
+  color: #ffe2bd;
+}
+.logicCards.four div span::before {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255,255,255,.68);
+}
+.logicCards.four div:nth-child(1) strong::before { content: "理解素材"; }
+.logicCards.four div:nth-child(1) span::before { content: "自动识别人物、宠物、美食、城市、旅行等画面内容。"; }
+.logicCards.four div:nth-child(2) strong::before { content: "规划故事"; }
+.logicCards.four div:nth-child(2) span::before { content: "生成镜头顺序、字幕、BGM、风格包和节奏方案。"; }
+.logicCards.four div:nth-child(3) strong::before { content: "稳定渲染"; }
+.logicCards.four div:nth-child(3) span::before { content: "减少人为抖动和强闪转场，优先保证成片可用。"; }
+.logicCards.four div:nth-child(4) strong::before { content: "持续优化"; }
+.logicCards.four div:nth-child(4) span::before { content: "支持多版本、质量评估、反馈学习和再次生成。"; }
+
+@media (max-width: 1000px) {
+  .hero.commercialHero { min-height: auto; padding: 34px; }
+  .commercialHero h1::before { font-size: clamp(38px, 10vw, 58px); }
+}

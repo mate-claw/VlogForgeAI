@@ -24,13 +24,15 @@ VlogForgeAI is an AI director for life vlogs. It turns daily photos and videos i
 
 ### 竖屏 9:16
 
+点击封面即可播放完整视频。
+
 | ▶️ 《Wild Kin》 | ▶️ 《动物》 | ▶️ 《厨房到餐桌的三分钟》 |
 | --- | --- | --- |
-| <video src="docs/Wild%20Kin.mp4" width="260" controls preload="metadata"></video> | <video src="docs/动物.mp4" width="260" controls preload="metadata"></video> | <video src="docs/厨房到餐桌的三分钟.mp4" width="260" controls preload="metadata"></video> |
+| <a href="docs/Wild%20Kin.mp4"><img src="docs/demo-covers/wild-kin.jpg" width="260" alt="Wild Kin"></a> | <a href="docs/动物.mp4"><img src="docs/demo-covers/animals.jpg" width="260" alt="动物"></a> | <a href="docs/厨房到餐桌的三分钟.mp4"><img src="docs/demo-covers/kitchen-table.jpg" width="260" alt="厨房到餐桌的三分钟"></a> |
 
 | ▶️ 《海面之上，静候浪来》 | ▶️ 《狗狗的午后》 |
 | --- | --- |
-| <video src="docs/海面之上，静候浪来.mp4" width="260" controls preload="metadata"></video> | <video src="docs/狗狗的午后.mp4" width="260" controls preload="metadata"></video> |
+| <a href="docs/海面之上，静候浪来.mp4"><img src="docs/demo-covers/sea-wave.jpg" width="260" alt="海面之上，静候浪来"></a> | <a href="docs/狗狗的午后.mp4"><img src="docs/demo-covers/dog-afternoon.jpg" width="260" alt="狗狗的午后"></a> |
 
 ## 核心能力
 

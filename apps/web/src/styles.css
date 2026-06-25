@@ -331,3 +331,223 @@ body {
   .hero.commercialHero { min-height: auto; padding: 34px; }
   .commercialHero h1::before { font-size: clamp(38px, 10vw, 58px); }
 }
+
+/* Creator-first layout: make uploading today's material the first task. */
+.page {
+  padding-top: 20px;
+}
+
+.hero.commercialHero {
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  padding: 28px 32px;
+  border-radius: 28px;
+}
+
+.commercialHero .eyebrow {
+  margin-bottom: 10px;
+}
+
+.commercialHero h1 {
+  max-width: 900px;
+  margin-bottom: 10px;
+}
+
+.commercialHero h1::before {
+  content: "今天拍的素材，直接生成一条 Vlog";
+  font-size: clamp(34px, 4.6vw, 58px);
+  line-height: 1.06;
+}
+
+.commercialHero p::before {
+  content: "先上传照片或视频，AI 会自动挑片段、写字幕、配 BGM、出预览。其它配置可以稍后再调。";
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.commercialHero .heroActions {
+  margin-top: 16px;
+}
+
+.phoneMock {
+  width: 190px;
+  height: 300px;
+  border-width: 8px;
+  border-radius: 34px;
+  padding: 20px;
+}
+
+.phoneBar {
+  width: 62px;
+  height: 6px;
+  margin-bottom: 42px;
+}
+
+.phoneCard {
+  min-height: 96px;
+  margin-top: 30px;
+  border-radius: 20px;
+  padding: 16px;
+}
+
+.phoneCard::before {
+  font-size: 22px;
+}
+
+.authPanel {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 22px;
+}
+
+.authPanel:not(.compact) {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(420px, 560px);
+  align-items: center;
+}
+
+.authPanel:not(.compact) h2::before {
+  content: "登录后保存作品，也可以先上传素材";
+  font-size: 22px;
+}
+
+.authPanel:not(.compact) p::before {
+  content: "登录用于保存历史和偏好；上传区已经放在下方第一屏。";
+  font-size: 14px;
+}
+
+.authForm {
+  grid-template-columns: 1fr 1fr auto auto;
+  min-width: 0;
+  align-items: center;
+}
+
+.authForm input,
+.authForm .primary,
+.authForm .secondary {
+  height: 48px;
+  border-radius: 16px;
+  padding: 0 16px;
+}
+
+.authForm .primary,
+.authForm .secondary {
+  white-space: nowrap;
+  font-size: 15px;
+}
+
+.grid {
+  margin-top: 16px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr);
+}
+
+.introPanel {
+  order: 20;
+}
+
+.preferencePanel {
+  order: 30;
+}
+
+.grid > .panel:has(input[accept="video/*,image/*"]) {
+  order: 1;
+  min-height: 360px;
+  background:
+    radial-gradient(circle at 24% 0%, rgba(255, 201, 143, .22), transparent 34%),
+    linear-gradient(135deg, rgba(255,255,255,.13), rgba(255,255,255,.065));
+  border-color: rgba(255, 201, 143, .30);
+}
+
+.grid > .panel:has(input[accept="video/*,image/*"]) h2 {
+  font-size: 0;
+}
+
+.grid > .panel:has(input[accept="video/*,image/*"]) h2::before {
+  content: "1. 上传今天的素材";
+  font-size: 30px;
+  color: #fff7ed;
+}
+
+.grid > .panel:has(input[accept="video/*,image/*"]) .uploadBox {
+  min-height: 230px;
+  border-color: rgba(255, 201, 143, .52);
+  background: rgba(255,255,255,.08);
+}
+
+.grid > .panel:has(input[accept="video/*,image/*"]) .uploadBox strong,
+.grid > .panel:has(input[accept="video/*,image/*"]) .uploadBox span {
+  font-size: 0;
+}
+
+.grid > .panel:has(input[accept="video/*,image/*"]) .uploadBox strong::before {
+  content: "点击选择照片 / 视频";
+  display: block;
+  font-size: 24px;
+  color: #fff7ed;
+}
+
+.grid > .panel:has(input[accept="video/*,image/*"]) .uploadBox span::before {
+  content: "可以一次上传多段素材，顺序不用整理，AI 会自动挑选高光片段。";
+  display: block;
+  margin-top: 8px;
+  font-size: 15px;
+  color: rgba(255,255,255,.66);
+}
+
+.grid > .panel:has(input[accept^="audio"]) {
+  order: 3;
+}
+
+.grid > .panel:has(.steps) {
+  order: 2;
+  grid-column: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+}
+
+.grid > .panel:has(.steps) h2 {
+  font-size: 0;
+}
+
+.grid > .panel:has(.steps) h2::before {
+  content: "2. 一键生成 Vlog";
+  font-size: 30px;
+  color: #fff7ed;
+}
+
+.grid > .panel:has(.steps) .primary {
+  width: 100%;
+  height: 62px;
+  margin-top: auto;
+  font-size: 20px;
+}
+
+.grid > .panel:has(.steps) .primary::after {
+  content: "";
+}
+
+.grid > .panel:has(.steps) .steps {
+  margin-top: 4px;
+}
+
+.grid > .panel:has(.steps) .status {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(0,0,0,.18);
+}
+
+@media (max-width: 1080px) {
+  .authPanel:not(.compact),
+  .authForm,
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .phoneMock {
+    display: none;
+  }
+  .grid > .panel:has(.steps) {
+    grid-column: 1 / -1;
+  }
+}

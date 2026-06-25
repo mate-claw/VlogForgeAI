@@ -1362,3 +1362,45 @@ body {
     border-top: 1px solid rgba(255, 224, 196, .14);
   }
 }
+
+/* Keep generated result directly under the upload card. */
+.productDemo {
+  align-items: start;
+  grid-auto-flow: dense;
+}
+
+.productDemo > .panel:has(input[accept="video/*,image/*"]) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.productDemo > .panel:has(.steps) {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  position: sticky;
+  top: 112px;
+}
+
+.productDemo .result {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.productDemo .resultTop,
+.productDemo .commercialResult {
+  grid-template-columns: 1fr;
+}
+
+.productDemo .result .video {
+  width: min(100%, 360px);
+}
+
+@media (max-width: 980px) {
+  .productDemo > .panel:has(input[accept="video/*,image/*"]),
+  .productDemo > .panel:has(.steps),
+  .productDemo .result {
+    grid-column: 1;
+    grid-row: auto;
+    position: static;
+  }
+}

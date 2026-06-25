@@ -186,6 +186,12 @@ docs/         架构、组件库、QA 和版本说明
 
 🎬 3. 也欢迎分享生成效果、失败案例、素材场景和新的 AI Vlog 风格需求
 
+### 联系方式
+
+扫码加入微信群交流：
+
+![微信群二维码](docs/webchat.jpg)
+
 ## 重要许可证说明
 
 本项目使用 [Remotion](https://github.com/remotion-dev/remotion) 作为第三方渲染依赖。Remotion 拥有独立许可证，请在商业使用前阅读并遵守 [Remotion License](https://www.remotion.dev/docs/license)。

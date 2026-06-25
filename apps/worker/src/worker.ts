@@ -1,10 +1,11 @@
-import { config, completeTask, ensureStorageDirs, failTask, queueStats, takeNextTask, type QueueTask } from '@ai-vlog/core';
+import { config, completeTask, ensureStorageDirs, failTask, NonRetryableTaskError, queueStats, readJob, takeNextTask, type QueueTask } from '@ai-vlog/core';
 import { processCreateVlog, processExportSquare, processReviseVlog } from './processor';
 
 ensureStorageDirs();
 
 async function handleTask(task: QueueTask) {
   console.log(`[worker] start ${task.taskId} ${task.type} job=${task.jobId} attempt=${task.attempts}/${task.maxAttempts}`);
+  if (!readJob(task.jobId)) throw new NonRetryableTaskError(`任务状态文件不存在或已被清理：${task.jobId}`);
   if (task.type === 'create_vlog') await processCreateVlog(task.jobId, task.payload as { assets?: never[] });
   else if (task.type === 'revise_vlog') await processReviseVlog(task.jobId, task.payload as never);
   else if (task.type === 'export_square') await processExportSquare(task.jobId, task.payload as never);

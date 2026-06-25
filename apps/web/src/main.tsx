@@ -206,6 +206,21 @@ function App() {
 
   return (
     <div className="page">
+      <nav className="siteNav" aria-label="VlogForgeAI navigation">
+        <a className="brand" href="#">
+          <span className="brandMark">VF</span>
+          <span>
+            <strong>VlogForgeAI</strong>
+            <small>AI Vlog Studio</small>
+          </span>
+        </a>
+        <div className="navLinks">
+          <a href="#create">开始生成</a>
+          <a href="#features">功能</a>
+          <a href="#workflow">流程</a>
+          <a href="https://github.com/mate-claw/VlogForgeAI" target="_blank" rel="noreferrer">GitHub</a>
+        </div>
+      </nav>
       <header className="hero commercialHero">
         <div>
           <div className="eyebrow">Stability V13 · AI Vlog</div>
@@ -231,7 +246,7 @@ function App() {
         </div>
       </section> : <section className="authPanel compact"><div><strong>{user.displayName}</strong><span>{user.email} · {user.role}</span></div><button className="secondary" onClick={logout}>退出登录</button></section>}
 
-      <main className="grid">
+      <main className="grid" id="create">
         <section className="panel wide introPanel">
           <h2>v13 上线前稳定验收</h2>
           <div className="logicCards four">
@@ -345,6 +360,49 @@ function App() {
           </div>
         </section>
       </main>
+
+      <section className="siteSection" id="features">
+        <div className="sectionHeader">
+          <span>Product</span>
+          <h2>一个面向生活素材的 AI Vlog 生成网站</h2>
+          <p>上传今天拍到的照片和视频，系统会自动理解内容、挑选高光、规划镜头、匹配 BGM，并用 Remotion 渲染成可预览、可下载、可分享的视频。</p>
+        </div>
+        <div className="featureGrid">
+          <article>
+            <strong>多模态素材理解</strong>
+            <p>识别人物、宠物、亲子、家庭吃饭、城市日常等生活场景，减少手动整理素材的时间。</p>
+          </article>
+          <article>
+            <strong>AI 导演规划</strong>
+            <p>自动生成故事线、字幕、节奏、转场和 BGM 方案，让普通素材也有完整叙事。</p>
+          </article>
+          <article>
+            <strong>稳定渲染链路</strong>
+            <p>DirectorPlan 校验、失败自修复、任务耗时记录和错误提示，适合持续迭代上线。</p>
+          </article>
+          <article>
+            <strong>多版本与反馈学习</strong>
+            <p>支持预览、推荐版本、保留、删除、分享和反馈，让后续生成越来越接近你的偏好。</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="siteSection workflowSection" id="workflow">
+        <div className="sectionHeader">
+          <span>Workflow</span>
+          <h2>从素材到成片，只保留三个动作</h2>
+        </div>
+        <div className="workflowCards">
+          <div><b>01</b><strong>上传素材</strong><p>把今天的视频和照片一次丢进来，顺序不需要提前整理。</p></div>
+          <div><b>02</b><strong>AI 生成</strong><p>AI 自动分析、导演、配乐、写字幕并渲染预览版本。</p></div>
+          <div><b>03</b><strong>下载分享</strong><p>查看推荐版本，继续优化，或直接下载发布到短视频平台。</p></div>
+        </div>
+      </section>
+
+      <footer className="siteFooter">
+        <strong>VlogForgeAI</strong>
+        <span>Open-source AI life vlog generator powered by multimodal AI, Remotion and FFmpeg.</span>
+      </footer>
     </div>
   );
 }

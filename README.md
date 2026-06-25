@@ -22,11 +22,15 @@ VlogForgeAI is an AI director for life vlogs. It turns daily photos and videos i
 
 ## 视频演示
 
-- [Wild Kin](docs/Wild%20Kin.mp4)
-- [动物](docs/动物.mp4)
-- [厨房到餐桌的三分钟](docs/厨房到餐桌的三分钟.mp4)
-- [海面之上，静候浪来](docs/海面之上，静候浪来.mp4)
-- [狗狗的午后](docs/狗狗的午后.mp4)
+### 竖屏 9:16
+
+| ▶️ 《Wild Kin》 | ▶️ 《动物》 | ▶️ 《厨房到餐桌的三分钟》 |
+| --- | --- | --- |
+| <video src="docs/Wild%20Kin.mp4" width="260" controls preload="metadata"></video> | <video src="docs/动物.mp4" width="260" controls preload="metadata"></video> | <video src="docs/厨房到餐桌的三分钟.mp4" width="260" controls preload="metadata"></video> |
+
+| ▶️ 《海面之上，静候浪来》 | ▶️ 《狗狗的午后》 |
+| --- | --- |
+| <video src="docs/海面之上，静候浪来.mp4" width="260" controls preload="metadata"></video> | <video src="docs/狗狗的午后.mp4" width="260" controls preload="metadata"></video> |
 
 ## 核心能力
 

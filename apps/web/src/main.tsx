@@ -220,6 +220,13 @@ function App() {
           <a href="#workflow">流程</a>
           <a href="https://github.com/mate-claw/VlogForgeAI" target="_blank" rel="noreferrer">GitHub</a>
         </div>
+        {user ? <div className="navUser">
+          <div>
+            <strong>{user.displayName}</strong>
+            <span>{user.email} · {user.role}</span>
+          </div>
+          <button className="navLogout" onClick={logout}>退出登录</button>
+        </div> : null}
       </nav>
       <header className="hero commercialHero">
         <div>
@@ -244,7 +251,7 @@ function App() {
           <button className="primary" onClick={submitAuth}>{authMode === 'login' ? '登录' : '注册并登录'}</button>
           <button className="secondary" onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}>{authMode === 'login' ? '没有账号？注册' : '已有账号？登录'}</button>
         </div>
-      </section> : <section className="authPanel compact"><div><strong>{user.displayName}</strong><span>{user.email} · {user.role}</span></div><button className="secondary" onClick={logout}>退出登录</button></section>}
+      </section> : null}
 
       <section className="tryHeader">
         <span>Try it now</span>

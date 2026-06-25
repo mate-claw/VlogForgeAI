@@ -246,7 +246,13 @@ function App() {
         </div>
       </section> : <section className="authPanel compact"><div><strong>{user.displayName}</strong><span>{user.email} · {user.role}</span></div><button className="secondary" onClick={logout}>退出登录</button></section>}
 
-      <main className="grid" id="create">
+      <section className="tryHeader">
+        <span>Try it now</span>
+        <h2>上传今天的素材，测试生成一条 AI Vlog</h2>
+        <p>不用先理解工作台配置。选择照片或视频，点击生成，VlogForgeAI 会自动完成素材分析、导演规划、配乐和预览渲染。</p>
+      </section>
+
+      <main className="grid productDemo" id="create">
         <section className="panel wide introPanel">
           <h2>v13 上线前稳定验收</h2>
           <div className="logicCards four">

@@ -56,6 +56,18 @@ function qualityClass(score?: number) {
   return 'weak';
 }
 
+function pickDisplayVersion(versions: CommercialVlogVersion[], preferredId?: string | null) {
+  if (!versions.length) return null;
+  const complete = (item: CommercialVlogVersion) => Boolean(item.plan && (item.videoUrl || item.previewUrl));
+  return versions.find((item) => item.versionId === preferredId && complete(item) && item.hdStatus === 'ready')
+    || versions.find((item) => item.isRecommended && complete(item) && item.hdStatus === 'ready')
+    || versions.find((item) => complete(item) && item.hdStatus === 'ready')
+    || versions.find((item) => item.versionId === preferredId && complete(item))
+    || versions.find((item) => item.isRecommended && complete(item))
+    || versions.find(complete)
+    || versions[0];
+}
+
 function VersionCard({ version, active, kept, deleted, onSelect }: { version: CommercialVlogVersion; active: boolean; kept?: boolean; deleted?: boolean; onSelect: () => void }) {
   const score = version.quality?.overallScore;
   return (
@@ -140,8 +152,13 @@ function App() {
 
   useJobPolling(jobId, (nextJob) => {
     setJob(nextJob);
-    if (!selectedVersionId && nextJob.versions?.length) setSelectedVersionId(nextJob.activeVersionId || nextJob.versions[0].versionId);
-    if (nextJob.activeVersionId && nextJob.activeVersionId !== selectedVersionId && ['completed', 'partial_ready'].includes(nextJob.status)) setSelectedVersionId(nextJob.activeVersionId);
+    const nextVersions = nextJob.versions || [];
+    if (nextVersions.length) {
+      const displayVersion = pickDisplayVersion(nextVersions, nextJob.activeVersionId);
+      if (!selectedVersionId || ['completed', 'partial_ready'].includes(nextJob.status)) {
+        setSelectedVersionId(displayVersion?.versionId || nextJob.activeVersionId || nextVersions[0].versionId);
+      }
+    }
     loadHistory();
     loadPreference();
     loadAnalytics();
@@ -150,7 +167,7 @@ function App() {
   const visibleVersions = useMemo(() => (job?.versions || []).filter((v) => !(job?.deletedVersionIds || []).includes(v.versionId)), [job]);
   const activeVersion = useMemo(() => {
     if (!visibleVersions.length) return null;
-    return visibleVersions.find((item) => item.versionId === selectedVersionId) || visibleVersions[0];
+    return pickDisplayVersion(visibleVersions, selectedVersionId);
   }, [visibleVersions, selectedVersionId]);
 
   const activePlan = activeVersion?.plan;
